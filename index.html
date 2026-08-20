@@ -9,189 +9,78 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --bg-color: #0b0c10;
-            --surface-color: rgba(31, 40, 51, 0.6);
-            --border-color: rgba(255, 255, 255, 0.1);
-            --text-primary: #ffffff;
-            --text-secondary: #c5c6c7;
-            --accent-primary: #66fcf1;
-            --accent-secondary: #45a29e;
-            --accent-purple: #9d4edd;
-            --accent-pink: #f72585;
-            --danger: #ef233c;
-            --success: #06d6a0;
-            --warning: #ffb703;
+            --bg-color: #0b0c10; --surface-color: rgba(31, 40, 51, 0.6); --border-color: rgba(255, 255, 255, 0.1);
+            --text-primary: #ffffff; --text-secondary: #c5c6c7;
+            --accent-primary: #66fcf1; --accent-secondary: #45a29e;
+            --danger: #ef233c; --success: #06d6a0; --warning: #ffb703; --orange: #fb8500; --purple: #9d4edd;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Outfit', sans-serif;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Outfit', sans-serif; }
+        body { background-color: var(--bg-color); background-image: radial-gradient(circle at 15% 50%, rgba(102, 252, 241, 0.05), transparent 25%), radial-gradient(circle at 85% 30%, rgba(157, 78, 221, 0.08), transparent 25%); color: var(--text-primary); display: flex; height: 100vh; overflow: hidden; }
+        .glass { background: var(--surface-color); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid var(--border-color); border-radius: 16px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); }
 
-        body {
-            background-color: var(--bg-color);
-            background-image: radial-gradient(circle at 15% 50%, rgba(102, 252, 241, 0.05), transparent 25%),
-                              radial-gradient(circle at 85% 30%, rgba(157, 78, 221, 0.08), transparent 25%);
-            color: var(--text-primary);
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        .glass {
-            background: var(--surface-color);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-        }
-
-        /* Sidebar */
-        .sidebar {
-            width: 260px;
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
-            border-right: 1px solid var(--border-color);
-            background: rgba(11, 12, 16, 0.8);
-            z-index: 10;
-        }
-
-        .logo {
-            font-size: 22px;
-            font-weight: 700;
-            margin-bottom: 40px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: var(--text-primary);
-            text-decoration: none;
-        }
-        
+        .sidebar { width: 260px; padding: 24px; display: flex; flex-direction: column; border-right: 1px solid var(--border-color); background: rgba(11, 12, 16, 0.8); z-index: 10; }
+        .logo { font-size: 22px; font-weight: 700; margin-bottom: 40px; display: flex; align-items: center; gap: 10px; color: var(--text-primary); text-decoration: none; }
         .logo i { color: var(--accent-primary); font-size: 24px; }
-
-        .nav-item {
-            padding: 14px 20px;
-            border-radius: 12px;
-            margin-bottom: 8px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            color: var(--text-secondary);
-            transition: all 0.3s ease;
-            font-weight: 500;
-        }
-
-        .nav-item:hover, .nav-item.active {
-            background: linear-gradient(90deg, rgba(102,252,241,0.1) 0%, rgba(102,252,241,0) 100%);
-            color: var(--accent-primary);
-            border-left: 3px solid var(--accent-primary);
-        }
-
+        .nav-item { padding: 14px 20px; border-radius: 12px; margin-bottom: 8px; cursor: pointer; display: flex; align-items: center; gap: 12px; color: var(--text-secondary); transition: all 0.3s ease; font-weight: 500; }
+        .nav-item:hover, .nav-item.active { background: linear-gradient(90deg, rgba(102,252,241,0.1) 0%, rgba(102,252,241,0) 100%); color: var(--accent-primary); border-left: 3px solid var(--accent-primary); }
         .sidebar-bottom { margin-top: auto; }
 
-        /* Main Content */
-        .main-content {
-            flex: 1;
-            padding: 30px 40px;
-            overflow-y: auto;
-            position: relative;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-        }
-
+        .main-content { flex: 1; padding: 30px 40px; overflow-y: auto; position: relative; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
         .header h1 { font-size: 28px; font-weight: 600; }
-
         .view { display: none; animation: fadeIn 0.4s ease-out forwards; }
         .view.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Grid Layouts */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-            margin-bottom: 24px;
-        }
-
+        .dashboard-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 24px; }
         .card { padding: 24px; }
         .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .card-title { font-size: 15px; color: var(--text-secondary); font-weight: 500; }
         .card-value { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
         .card-subtext { font-size: 13px; color: var(--text-secondary); }
 
-        /* Forms */
+        .form-row { display: flex; gap: 15px; margin-bottom: 16px; }
+        .form-row .form-group { flex: 1; margin-bottom: 0; }
         .form-group { margin-bottom: 16px; }
         .form-group label { display: block; margin-bottom: 6px; font-size: 13px; color: var(--text-secondary); }
-        .form-control {
-            width: 100%; padding: 12px 16px; background: rgba(0, 0, 0, 0.2);
-            border: 1px solid var(--border-color); border-radius: 8px;
-            color: var(--text-primary); font-size: 14px; transition: border-color 0.3s;
-        }
+        .form-control { width: 100%; padding: 12px 16px; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-size: 14px; transition: border-color 0.3s; }
         .form-control:focus { outline: none; border-color: var(--accent-primary); }
         select.form-control option { background-color: var(--bg-color); color: var(--text-primary); }
+        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
 
-        .btn {
-            padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer;
-            font-weight: 600; font-size: 14px; transition: all 0.3s; display: inline-flex; align-items: center; gap: 8px;
-        }
+        .btn { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.3s; display: inline-flex; align-items: center; gap: 8px; }
         .btn-primary { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); color: #000; }
         .btn-primary:hover { box-shadow: 0 0 15px rgba(102, 252, 241, 0.4); transform: translateY(-2px); }
         .btn-danger { background: rgba(239, 35, 60, 0.2); color: var(--danger); border: 1px solid var(--danger); }
         .btn-danger:hover { background: var(--danger); color: #fff; }
 
-        /* Tables */
-        .table-container { width: 100%; overflow-x: auto; margin-top: 15px; }
+        .btn-action { background: transparent; border: none; color: var(--danger); cursor: pointer; font-size: 15px; padding: 4px; transition: 0.2s; opacity: 0.7; }
+        .btn-action:hover { opacity: 1; transform: scale(1.1); }
+
+        .table-container { width: 100%; overflow-x: auto; margin-top: 15px; max-height: 400px; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border-color); font-size: 14px; }
-        th { color: var(--text-secondary); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
-        tr:hover td { background: rgba(255, 255, 255, 0.02); }
+        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border-color); font-size: 13px; }
+        th { color: var(--text-secondary); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; position: sticky; top: 0; background: var(--surface-color); backdrop-filter: blur(12px); z-index: 2; }
+        tr:hover td { background: rgba(255, 255, 255, 0.05); }
 
         .badge { padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
         .badge-success { background: rgba(6, 214, 160, 0.2); color: var(--success); }
         .badge-danger { background: rgba(239, 35, 60, 0.2); color: var(--danger); }
+        .badge-warning { background: rgba(255, 183, 3, 0.2); color: var(--warning); }
         
         .two-col { display: grid; grid-template-columns: 1fr 1.5fr; gap: 24px; margin-bottom: 24px; }
-        .three-col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 24px; }
-
         .currency { font-family: monospace; font-size: 1.1em; }
         .positive { color: var(--success); }
         .negative { color: var(--danger); }
+        .highlight-orange { color: var(--orange); }
+        .highlight-purple { color: var(--purple); }
 
-        /* Site Selector bar */
-        .site-selector-bar {
-            background: rgba(0,0,0,0.3);
-            padding: 15px 24px;
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            margin-bottom: 24px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .site-selector-bar select {
-            flex: 1;
-            max-width: 400px;
-        }
+        .selector-bar { background: rgba(0,0,0,0.3); padding: 15px 24px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 24px; display: flex; align-items: center; gap: 15px; }
+        .selector-bar select { flex: 1; max-width: 400px; }
         
-        /* Tabs within site dashboard */
-        .site-tabs {
-            display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;
-        }
-        .site-tab {
-            padding: 8px 16px; cursor: pointer; border-radius: 8px; font-size: 14px; font-weight: 500;
-            color: var(--text-secondary); transition: 0.3s;
-        }
+        .site-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+        .site-tab { padding: 8px 16px; cursor: pointer; border-radius: 8px; font-size: 14px; font-weight: 500; color: var(--text-secondary); transition: 0.3s; }
         .site-tab.active { background: rgba(102, 252, 241, 0.1); color: var(--accent-primary); }
         .site-tab-content { display: none; }
         .site-tab-content.active { display: block; animation: fadeIn 0.3s; }
@@ -199,11 +88,11 @@
 </head>
 <body>
 
-    <!-- Sidebar -->
     <div class="sidebar">
         <a href="#" class="logo"><i class="fa-solid fa-layer-group"></i> BizFlow</a>
         <div class="nav-item active" onclick="switchView('dashboard')"><i class="fa-solid fa-house"></i> Global Dashboard</div>
-        <div class="nav-item" onclick="switchView('setup')"><i class="fa-solid fa-building"></i> Company & Sites Setup</div>
+        <div class="nav-item" onclick="switchView('setup')"><i class="fa-solid fa-gears"></i> Master Setup</div>
+        <div class="nav-item" onclick="switchView('companyDashboard')"><i class="fa-solid fa-building"></i> Company Dashboard</div>
         <div class="nav-item" onclick="switchView('siteDashboard')"><i class="fa-solid fa-map-location-dot"></i> Site Dashboard</div>
         
         <div class="sidebar-bottom">
@@ -213,48 +102,38 @@
         </div>
     </div>
 
-    <!-- Main Content -->
     <div class="main-content">
-        
-        <!-- Global Dashboard View -->
+        <!-- Global Dashboard -->
         <div id="dashboardView" class="view active">
             <div class="header"><h1>Global Overview</h1></div>
-            
             <div class="dashboard-grid">
                 <div class="card glass">
-                    <div class="card-header"><span class="card-title">Net Investments</span><i class="fa-solid fa-handshake" style="color: var(--success)"></i></div>
-                    <div class="card-value currency" id="globNetInv">₹0</div>
-                    <div class="card-subtext">Invested - Withdrawn</div>
+                    <div class="card-header"><span class="card-title">Corporate Reserves</span><i class="fa-solid fa-building-columns" style="color: var(--purple)"></i></div>
+                    <div class="card-value currency highlight-purple" id="globCorp">₹0</div>
+                    <div class="card-subtext">Retained by Parent Companies</div>
                 </div>
                 <div class="card glass">
-                    <div class="card-header"><span class="card-title">Total Bills Received</span><i class="fa-solid fa-money-bill-trend-up" style="color: var(--accent-primary)"></i></div>
-                    <div class="card-value currency" id="globBills">₹0</div>
-                    <div class="card-subtext">Total Bills - RM</div>
+                    <div class="card-header"><span class="card-title">Site Liquid Funds</span><i class="fa-solid fa-wallet" style="color: var(--success)"></i></div>
+                    <div class="card-value currency positive" id="globCash">₹0</div>
+                    <div class="card-subtext">Allocated Cash - Expenses</div>
+                </div>
+                <div class="card glass" style="border: 1px solid var(--orange);">
+                    <div class="card-header"><span class="card-title">Locked Receivables</span><i class="fa-solid fa-lock" style="color: var(--orange)"></i></div>
+                    <div class="card-value currency highlight-orange" id="globLocked">₹0</div>
+                    <div class="card-subtext">Unreleased EMD & RM</div>
                 </div>
                 <div class="card glass">
-                    <div class="card-header"><span class="card-title">Total Deductions</span><i class="fa-solid fa-chart-line" style="color: var(--danger)"></i></div>
-                    <div class="card-value currency" id="globDed">₹0</div>
-                    <div class="card-subtext">Expenses + EMD</div>
-                </div>
-                <div class="card glass">
-                    <div class="card-header"><span class="card-title">Remaining Funds</span><i class="fa-solid fa-piggy-bank" style="color: var(--warning)"></i></div>
-                    <div class="card-value currency" id="globRemain">₹0</div>
-                    <div class="card-subtext">Net Inv + Bills - Deductions</div>
+                    <div class="card-header"><span class="card-title">Net Investments</span><i class="fa-solid fa-handshake" style="color: var(--accent-primary)"></i></div>
+                    <div class="card-value currency" id="globInv">₹0</div>
+                    <div class="card-subtext">Partner Investments</div>
                 </div>
             </div>
-
             <div class="card glass" style="margin-bottom: 24px;">
                 <h3 style="margin-bottom: 20px;">Site Wise Breakdown</h3>
                 <div class="table-container">
                     <table>
                         <thead>
-                            <tr>
-                                <th>Site</th>
-                                <th>Net Investments</th>
-                                <th>Bills Received</th>
-                                <th>Deductions (Exp + EMD)</th>
-                                <th>Remaining Funds</th>
-                            </tr>
+                            <tr><th>Company - Site</th><th>Net Inv</th><th>Expenses</th><th>Locked (EMD+RM)</th><th>Allocated Bill Cash</th><th>Site Cash</th></tr>
                         </thead>
                         <tbody id="globSiteTable"></tbody>
                     </table>
@@ -262,212 +141,188 @@
             </div>
         </div>
 
-        <!-- Setup View (Company & Sites) -->
+        <!-- Setup View -->
         <div id="setupView" class="view">
             <div class="header"><h1>Master Setup</h1></div>
             <div class="two-col">
                 <div class="card glass">
                     <h3 style="margin-bottom: 15px;">Add Company</h3>
                     <form id="companyForm">
-                        <div class="form-group">
-                            <label>Company Name</label>
-                            <input type="text" id="companyName" class="form-control" required placeholder="e.g. Apex Corp">
-                        </div>
-                        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add Company</button>
+                        <div class="form-group"><label>Company Name</label><input type="text" id="companyName" class="form-control" required></div>
+                        <button type="submit" class="btn btn-primary">Add Company</button>
                     </form>
-                    <div class="table-container" style="margin-top: 20px;">
-                        <table>
-                            <thead><tr><th>Company Name</th></tr></thead>
-                            <tbody id="compTableBody"></tbody>
-                        </table>
+                    <div class="table-container"><table><thead><tr><th>Company</th><th></th></tr></thead><tbody id="compTableBody"></tbody></table></div>
+                </div>
+                <div class="card glass">
+                    <h3 style="margin-bottom: 15px;">Add Site / Tender</h3>
+                    <form id="siteForm">
+                        <div class="form-group"><label>Parent Company</label><select id="siteCompanyId" class="form-control" required></select></div>
+                        <div class="form-group"><label>Site/Tender Name</label><input type="text" id="siteName" class="form-control" required></div>
+                        <div class="form-group"><label>Department Name of Site</label><input type="text" id="managerName" class="form-control" required></div>
+                        <button type="submit" class="btn btn-primary">Add Site</button>
+                    </form>
+                    <div class="table-container"><table><thead><tr><th>Company</th><th>Site</th><th>Department</th><th></th></tr></thead><tbody id="sitesTableBody"></tbody></table></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Company Dashboard View -->
+        <div id="companyDashboardView" class="view">
+            <div class="header"><h1>Company Dashboard</h1></div>
+            
+            <div class="selector-bar">
+                <i class="fa-solid fa-building" style="color: var(--purple);"></i>
+                <strong>Select Company:</strong>
+                <select id="activeCompanySelect" class="form-control" onchange="refreshCompanyDashboard()"></select>
+            </div>
+
+            <div id="companyContentWrapper" style="display: none;">
+                <div class="dashboard-grid">
+                    <div class="card glass">
+                        <div class="card-header"><span class="card-title">Total Cash Received (Bills)</span></div>
+                        <div class="card-value currency positive" id="corpTotalRcvd">₹0</div>
+                    </div>
+                    <div class="card glass">
+                        <div class="card-header"><span class="card-title">Total Allocated to Sites</span></div>
+                        <div class="card-value currency negative" id="corpTotalAlloc">₹0</div>
+                    </div>
+                    <div class="card glass">
+                        <div class="card-header"><span class="card-title">Corporate Expenses</span></div>
+                        <div class="card-value currency negative" id="corpExpTot">₹0</div>
+                    </div>
+                    <div class="card glass" style="border-left: 4px solid var(--purple);">
+                        <div class="card-header"><span class="card-title">Corporate Cash Reserve</span></div>
+                        <div class="card-value currency highlight-purple" id="corpReserve">₹0</div>
                     </div>
                 </div>
 
-                <div class="card glass">
-                    <h3 style="margin-bottom: 15px;">Add Site</h3>
-                    <form id="siteForm">
-                        <div class="form-group">
-                            <label>Select Parent Company</label>
-                            <select id="siteCompanyId" class="form-control" required></select>
+                <div class="two-col">
+                    <div class="card glass">
+                        <h3 style="margin-bottom: 15px;">Add Corporate Expense</h3>
+                        <form id="corpExpenseForm">
+                            <div class="form-row">
+                                <div class="form-group"><label>Date</label><input type="date" id="cExpDate" class="form-control" required></div>
+                                <div class="form-group"><label>Payment Type</label><select id="cExpPayType" class="form-control" required><option value="Account">Account</option><option value="Cash">Cash</option></select></div>
+                            </div>
+                            <div class="form-group"><label>Description (e.g. Office Rent, Salaries)</label><input type="text" id="cExpDesc" class="form-control" required></div>
+                            <div class="form-group"><label>Amount (₹)</label><input type="text" id="cExpAmount" class="form-control amt-input" required placeholder="0.00"></div>
+                            <button type="submit" class="btn btn-primary">Add Corp Expense</button>
+                        </form>
+                    </div>
+                    <div class="card glass">
+                        <h3 style="margin-bottom: 15px;">Corporate Expense Log</h3>
+                        <div class="table-container">
+                            <table><thead><tr><th>Date</th><th>Desc</th><th>Amount</th><th></th></tr></thead><tbody id="cExpTableBody"></tbody></table>
                         </div>
-                        <div class="form-group">
-                            <label>Site Location / Name</label>
-                            <input type="text" id="siteName" class="form-control" required placeholder="e.g. Phase 1">
-                        </div>
-                        <div class="form-group">
-                            <label>Site Manager Name</label>
-                            <input type="text" id="managerName" class="form-control" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add Site</button>
-                    </form>
-                    <div class="table-container" style="margin-top: 20px;">
-                        <table>
-                            <thead><tr><th>Company</th><th>Site</th><th>Manager</th></tr></thead>
-                            <tbody id="sitesTableBody"></tbody>
-                        </table>
                     </div>
                 </div>
+            </div>
+            
+            <div id="noCompanyMsg" style="text-align: center; padding: 50px; color: var(--text-secondary);">
+                <i class="fa-solid fa-arrow-pointer" style="font-size: 40px; margin-bottom: 15px; opacity: 0.5;"></i>
+                <h2>Please select a company to view its corporate dashboard</h2>
             </div>
         </div>
 
         <!-- Site Dashboard View -->
         <div id="siteDashboardView" class="view">
-            <div class="header"><h1>Site Management</h1></div>
+            <div class="header"><h1>Site Dashboard</h1></div>
             
-            <div class="site-selector-bar">
+            <div class="selector-bar">
                 <i class="fa-solid fa-filter" style="color: var(--accent-primary);"></i>
                 <strong>Select Site:</strong>
                 <select id="activeSiteSelect" class="form-control" onchange="refreshSiteDashboard()"></select>
             </div>
 
             <div id="siteContentWrapper" style="display: none;">
-                <!-- Site KPI Grid -->
-                <div class="dashboard-grid">
-                    <div class="card glass">
-                        <div class="card-header"><span class="card-title">Net Investments</span></div>
-                        <div class="card-value currency" id="siteNetInv">₹0</div>
+                <div class="dashboard-grid" style="grid-template-columns: repeat(2, 1fr);">
+                    <div class="card glass" style="border-left: 4px solid var(--success);">
+                        <div class="card-header"><span class="card-title">Available Cash</span></div>
+                        <div class="card-value currency positive" id="siteCash">₹0</div>
                     </div>
-                    <div class="card glass">
-                        <div class="card-header"><span class="card-title">Bills Received</span></div>
-                        <div class="card-value currency positive" id="siteBillsRec">₹0</div>
-                    </div>
-                    <div class="card glass">
-                        <div class="card-header"><span class="card-title">Total Deductions</span></div>
-                        <div class="card-value currency negative" id="siteDed">₹0</div>
-                    </div>
-                    <div class="card glass">
-                        <div class="card-header"><span class="card-title">Remaining Funds</span></div>
-                        <div class="card-value currency" style="color: var(--accent-primary)" id="siteRemain">₹0</div>
+                    <div class="card glass" style="border-left: 4px solid var(--orange);">
+                        <div class="card-header"><span class="card-title">Locked Receivables (EMD + RM)</span></div>
+                        <div class="card-value currency highlight-orange" id="siteLocked">₹0</div>
                     </div>
                 </div>
 
-                <!-- Site Tabs -->
                 <div class="card glass">
                     <div class="site-tabs">
                         <div class="site-tab active" onclick="switchSiteTab('partners')">Partners & Inv</div>
                         <div class="site-tab" onclick="switchSiteTab('expenses')">Expenses</div>
-                        <div class="site-tab" onclick="switchSiteTab('emd')">EMD</div>
-                        <div class="site-tab" onclick="switchSiteTab('bills')">Bills & RM</div>
+                        <div class="site-tab" onclick="switchSiteTab('emd')">Tender EMD</div>
+                        <div class="site-tab" onclick="switchSiteTab('rabills')">RA Bills</div>
                     </div>
 
-                    <!-- Partners Tab -->
                     <div id="tab-partners" class="site-tab-content active">
                         <div class="two-col">
                             <div>
-                                <h3 style="margin-bottom: 15px;">Partner Transaction</h3>
+                                <h3 style="margin-bottom: 15px;">Add Transaction</h3>
                                 <form id="partnerTxForm">
-                                    <div class="form-group">
-                                        <label>Partner Name</label>
-                                        <input type="text" id="ptName" class="form-control" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Transaction Type</label>
-                                        <select id="ptType" class="form-control" required>
-                                            <option value="invest">Invest (Add Funds)</option>
-                                            <option value="withdraw">Withdraw (Remove Funds)</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Amount (₹)</label>
-                                        <input type="number" id="ptAmount" class="form-control" required step="0.01">
-                                    </div>
+                                    <div class="form-row"><div class="form-group"><label>Date</label><input type="date" id="ptDate" class="form-control" required></div><div class="form-group"><label>Payment Type</label><select id="ptPayType" class="form-control" required><option value="Account">Account</option><option value="Cash">Cash</option></select></div></div>
+                                    <div class="form-group"><label>Partner Name</label><input type="text" id="ptName" class="form-control" required></div>
+                                    <div class="form-group"><label>Type</label><select id="ptType" class="form-control" required><option value="invest">Invest</option><option value="withdraw">Withdraw</option></select></div>
+                                    <div class="form-group"><label>Amount (₹)</label><input type="text" id="ptAmount" class="form-control amt-input" required placeholder="0.00"></div>
                                     <button type="submit" class="btn btn-primary">Save Transaction</button>
                                 </form>
                             </div>
-                            <div class="table-container">
-                                <table>
-                                    <thead><tr><th>Partner</th><th>Type</th><th>Amount</th></tr></thead>
-                                    <tbody id="ptTableBody"></tbody>
-                                </table>
-                            </div>
+                            <div class="table-container"><table><thead><tr><th>Date</th><th>Partner</th><th>Type</th><th>Amount</th><th></th></tr></thead><tbody id="ptTableBody"></tbody></table></div>
                         </div>
                     </div>
 
-                    <!-- Expenses Tab -->
                     <div id="tab-expenses" class="site-tab-content">
                         <div class="two-col">
                             <div>
                                 <h3 style="margin-bottom: 15px;">Record Expense</h3>
                                 <form id="expenseForm">
-                                    <div class="form-group">
-                                        <label>Description</label>
-                                        <input type="text" id="expDesc" class="form-control" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Total Amount (₹)</label>
-                                        <input type="number" id="expAmount" class="form-control" required step="0.01">
-                                    </div>
+                                    <div class="form-row"><div class="form-group"><label>Date</label><input type="date" id="expDate" class="form-control" required></div><div class="form-group"><label>Payment Type</label><select id="expPayType" class="form-control" required><option value="Account">Account</option><option value="Cash">Cash</option></select></div></div>
+                                    <div class="form-group"><label>Description</label><input type="text" id="expDesc" class="form-control" required></div>
+                                    <div class="form-group"><label>Total Amount (₹)</label><input type="text" id="expAmount" class="form-control amt-input" required placeholder="0.00"></div>
                                     <button type="submit" class="btn btn-primary">Add Expense</button>
                                 </form>
                             </div>
-                            <div class="table-container">
-                                <table>
-                                    <thead><tr><th>Desc</th><th>Amount</th></tr></thead>
-                                    <tbody id="expTableBody"></tbody>
-                                </table>
-                            </div>
+                            <div class="table-container"><table><thead><tr><th>Date</th><th>Desc</th><th>Amount</th><th></th></tr></thead><tbody id="expTableBody"></tbody></table></div>
                         </div>
                     </div>
 
-                    <!-- EMD Tab -->
                     <div id="tab-emd" class="site-tab-content">
                         <div class="two-col">
                             <div>
-                                <h3 style="margin-bottom: 15px;">Record EMD</h3>
+                                <h3 style="margin-bottom: 15px;">Record EMD (Security Deposit)</h3>
                                 <form id="emdForm">
-                                    <div class="form-group">
-                                        <label>Reference / Tender Details</label>
-                                        <input type="text" id="emdDesc" class="form-control" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Amount (₹)</label>
-                                        <input type="number" id="emdAmount" class="form-control" required step="0.01">
-                                    </div>
-                                    <button type="submit" class="btn btn-primary">Add EMD</button>
+                                    <div class="form-row"><div class="form-group"><label>Date</label><input type="date" id="emdDate" class="form-control" required></div><div class="form-group"><label>Payment</label><select id="emdPayType" class="form-control" required><option value="Account">Account</option><option value="Cash">Cash</option></select></div></div>
+                                    <div class="form-group"><label>Reference / Tender</label><input type="text" id="emdDesc" class="form-control" required></div>
+                                    <div class="form-group"><label>Amount (₹)</label><input type="text" id="emdAmount" class="form-control amt-input" required placeholder="0.00"></div>
+                                    <div class="form-group"><label>Release Date (Blank if locked)</label><input type="date" id="emdReleaseDate" class="form-control"></div>
+                                    <button type="submit" class="btn btn-primary">Save EMD</button>
                                 </form>
                             </div>
-                            <div class="table-container">
-                                <table>
-                                    <thead><tr><th>Reference</th><th>Amount</th></tr></thead>
-                                    <tbody id="emdTableBody"></tbody>
-                                </table>
-                            </div>
+                            <div class="table-container"><table><thead><tr><th>Date</th><th>Ref</th><th>Amount</th><th>Status</th><th></th></tr></thead><tbody id="emdTableBody"></tbody></table></div>
                         </div>
                     </div>
 
-                    <!-- Bills & RM Tab -->
-                    <div id="tab-bills" class="site-tab-content">
+                    <div id="tab-rabills" class="site-tab-content">
                         <div class="two-col">
                             <div>
-                                <h3 style="margin-bottom: 15px;">Record Bill & RM</h3>
+                                <h3 style="margin-bottom: 15px;">Running Account (RA) Bill</h3>
                                 <form id="billForm">
-                                    <div class="form-group">
-                                        <label>Bill Reference / Description</label>
-                                        <input type="text" id="billDesc" class="form-control" required>
+                                    <div class="form-row"><div class="form-group"><label>Date</label><input type="date" id="billDate" class="form-control" required></div><div class="form-group"><label>Payment</label><select id="billPayType" class="form-control" required><option value="Account">Account</option><option value="Cash">Cash</option></select></div></div>
+                                    <div class="form-group"><label>Bill Reference</label><input type="text" id="billDesc" class="form-control" required></div>
+                                    <div class="form-row">
+                                        <div class="form-group"><label>Gross Amount</label><input type="text" id="billGross" class="form-control amt-input" required></div>
+                                        <div class="form-group"><label>RM Held (Locked)</label><input type="text" id="billRM" class="form-control amt-input" required></div>
                                     </div>
-                                    <div class="form-group">
-                                        <label>Total Bill Amount (₹)</label>
-                                        <input type="number" id="billTotal" class="form-control" required step="0.01">
+                                    <div class="form-row">
+                                        <div class="form-group"><label>Other Deductions (Lost)</label><input type="text" id="billDed" class="form-control amt-input" required></div>
+                                        <div class="form-group"><label>Allocated to Site (₹)</label><input type="text" id="billAlloc" class="form-control amt-input" required></div>
                                     </div>
-                                    <div class="form-group">
-                                        <label>RM - Reserved Amount (₹)</label>
-                                        <input type="number" id="billRM" class="form-control" required step="0.01">
-                                    </div>
-                                    <div class="form-group">
-                                        <p style="font-size: 13px; color: var(--success);">* Received Amount (Total - RM) will be credited to funds.</p>
-                                    </div>
-                                    <button type="submit" class="btn btn-primary">Save Bill</button>
+                                    <div class="form-group"><label>RM Release Date (Blank if locked)</label><input type="date" id="billRmRelease" class="form-control"></div>
+                                    <button type="submit" class="btn btn-primary">Save RA Bill</button>
                                 </form>
                             </div>
-                            <div class="table-container">
-                                <table>
-                                    <thead><tr><th>Reference</th><th>Total Bill</th><th>RM</th><th>Received</th></tr></thead>
-                                    <tbody id="billTableBody"></tbody>
-                                </table>
-                            </div>
+                            <div class="table-container"><table><thead><tr><th>Date</th><th>Ref</th><th>Net Rcvd</th><th>Alloc to Site</th><th>Retained by Corp</th><th></th></tr></thead><tbody id="billTableBody"></tbody></table></div>
                         </div>
                     </div>
-
                 </div>
             </div>
             
@@ -476,57 +331,49 @@
                 <h2>Please select a site to view its dashboard</h2>
             </div>
         </div>
-
     </div>
 
     <script>
-        // Data Structure
-        let appData = {
-            companies: [],
-            sites: [],
-            partnerTx: [],
-            expenses: [],
-            emd: [],
-            bills: []
-        };
-
-        const STORAGE_KEY = 'bizflow_data_v2';
+        let appData = { companies: [], sites: [], partnerTx: [], expenses: [], emd: [], bills: [], corpExpenses: [] };
+        const STORAGE_KEY = 'bizflow_data_v4';
 
         function initApp() {
             const savedData = localStorage.getItem(STORAGE_KEY);
             if (savedData) appData = JSON.parse(savedData);
-            updateDropdowns();
-            renderSetupTables();
-            renderGlobalDashboard();
-            refreshSiteDashboard();
+            setupInputFormatting(); updateDropdowns(); renderSetupTables(); renderGlobalDashboard(); refreshSiteDashboard(); refreshCompanyDashboard();
+            const today = new Date().toISOString().split('T')[0];
+            document.querySelectorAll('input[type="date"]').forEach(el => { if(!el.id.includes('Release')) el.value = today; });
         }
 
-        function saveData() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
-            updateDropdowns();
-            renderSetupTables();
-            renderGlobalDashboard();
-            refreshSiteDashboard();
-        }
+        function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(appData)); updateDropdowns(); renderSetupTables(); renderGlobalDashboard(); refreshSiteDashboard(); refreshCompanyDashboard(); }
+        function resetApp() { if(confirm("Are you sure?")) { localStorage.removeItem(STORAGE_KEY); location.reload(); } }
 
-        function resetApp() {
-            if(confirm("Are you sure you want to delete all data? This cannot be undone.")) {
-                localStorage.removeItem(STORAGE_KEY);
-                location.reload();
+        function deleteEntry(col, id) {
+            if(confirm("Delete this entry?")) {
+                appData[col] = appData[col].filter(x => x.id !== id);
+                if(col === 'companies') appData.sites = appData.sites.filter(s => s.companyId !== id);
+                saveData();
             }
         }
 
         function generateId() { return Math.random().toString(36).substr(2, 9); }
-        function formatCurrency(amount) { return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount); }
+        function formatCurrency(amount) { return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount || 0); }
+        function parseInputToFloat(val) { if(!val) return 0; return parseFloat(val.toString().replace(/[^0-9.-]+/g,"")) || 0; }
+        
+        function setupInputFormatting() {
+            document.querySelectorAll('.amt-input').forEach(input => {
+                input.addEventListener('blur', function(e) { let val = parseInputToFloat(e.target.value); if(val) e.target.value = new Intl.NumberFormat('en-IN').format(val); });
+                input.addEventListener('focus', function(e) { let val = parseInputToFloat(e.target.value); if(val) e.target.value = val; });
+            });
+        }
+        function getAmt(id) { return parseInputToFloat(document.getElementById(id).value); }
 
-        // Navigation
         function switchView(viewId) {
             document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             document.getElementById(viewId + 'View').classList.add('active');
             event.currentTarget.classList.add('active');
         }
-
         function switchSiteTab(tabId) {
             document.querySelectorAll('.site-tab').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.site-tab-content').forEach(el => el.classList.remove('active'));
@@ -535,181 +382,152 @@
         }
 
         // Setup Forms
-        document.getElementById('companyForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            appData.companies.push({ id: generateId(), name: document.getElementById('companyName').value });
-            e.target.reset(); saveData();
-        });
-
-        document.getElementById('siteForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            appData.sites.push({
-                id: generateId(), companyId: document.getElementById('siteCompanyId').value,
-                location: document.getElementById('siteName').value, manager: document.getElementById('managerName').value
-            });
+        document.getElementById('companyForm').addEventListener('submit', (e) => { e.preventDefault(); appData.companies.push({ id: generateId(), name: document.getElementById('companyName').value }); e.target.reset(); saveData(); });
+        document.getElementById('siteForm').addEventListener('submit', (e) => { e.preventDefault(); appData.sites.push({ id: generateId(), companyId: document.getElementById('siteCompanyId').value, location: document.getElementById('siteName').value, manager: document.getElementById('managerName').value }); e.target.reset(); saveData(); });
+        
+        document.getElementById('corpExpenseForm').addEventListener('submit', (e) => {
+            e.preventDefault(); const compId = document.getElementById('activeCompanySelect').value; if(!compId) return alert("Select company");
+            appData.corpExpenses.push({ id: generateId(), compId, date: document.getElementById('cExpDate').value, payType: document.getElementById('cExpPayType').value, desc: document.getElementById('cExpDesc').value, amount: getAmt('cExpAmount') });
             e.target.reset(); saveData();
         });
 
         function updateDropdowns() {
-            // Setup Company Select
-            const compSel = document.getElementById('siteCompanyId');
-            compSel.innerHTML = '<option value="">-- Select Company --</option>';
+            const compSel = document.getElementById('siteCompanyId'); compSel.innerHTML = '<option value="">-- Select Company --</option>';
             appData.companies.forEach(c => compSel.innerHTML += `<option value="${c.id}">${c.name}</option>`);
+            
+            const aCompSel = document.getElementById('activeCompanySelect'); const cVal = aCompSel.value;
+            aCompSel.innerHTML = '<option value="">-- Select Company --</option>';
+            appData.companies.forEach(c => aCompSel.innerHTML += `<option value="${c.id}">${c.name}</option>`);
+            if(cVal) aCompSel.value = cVal;
 
-            // Site Selectors
-            const siteSel = document.getElementById('activeSiteSelect');
-            const currentVal = siteSel.value;
+            const siteSel = document.getElementById('activeSiteSelect'); const currentVal = siteSel.value;
             siteSel.innerHTML = '<option value="">-- Select a Site --</option>';
-            appData.sites.forEach(s => {
-                const comp = appData.companies.find(c => c.id === s.companyId);
-                const compName = comp ? comp.name : 'Unknown';
-                siteSel.innerHTML += `<option value="${s.id}">${compName} - ${s.location}</option>`;
-            });
+            appData.sites.forEach(s => { const comp = appData.companies.find(c => c.id === s.companyId); siteSel.innerHTML += `<option value="${s.id}">${comp?comp.name:'?'} - ${s.location}</option>`; });
             if(currentVal) siteSel.value = currentVal;
         }
 
         function renderSetupTables() {
-            const cBody = document.getElementById('compTableBody');
-            cBody.innerHTML = '';
-            appData.companies.forEach(c => cBody.innerHTML += `<tr><td>${c.name}</td></tr>`);
-
-            const sBody = document.getElementById('sitesTableBody');
-            sBody.innerHTML = '';
-            appData.sites.forEach(s => {
-                const comp = appData.companies.find(c => c.id === s.companyId);
-                sBody.innerHTML += `<tr><td>${comp?comp.name:''}</td><td>${s.location}</td><td>${s.manager}</td></tr>`;
-            });
+            const cBody = document.getElementById('compTableBody'); cBody.innerHTML = '';
+            appData.companies.forEach(c => cBody.innerHTML += `<tr><td>${c.name}</td><td style="text-align: right;"><button class="btn-action" onclick="deleteEntry('companies', '${c.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`);
+            const sBody = document.getElementById('sitesTableBody'); sBody.innerHTML = '';
+            appData.sites.forEach(s => { const comp = appData.companies.find(c => c.id === s.companyId); sBody.innerHTML += `<tr><td>${comp?comp.name:''}</td><td>${s.location}</td><td>${s.manager}</td><td style="text-align: right;"><button class="btn-action" onclick="deleteEntry('sites', '${s.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`; });
         }
 
-        // Site Specific Logic
+        // Transactions
         function getActiveSiteId() { return document.getElementById('activeSiteSelect').value; }
 
-        document.getElementById('partnerTxForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const siteId = getActiveSiteId();
-            if(!siteId) return alert("Select a site first");
-            appData.partnerTx.push({
-                id: generateId(), siteId, name: document.getElementById('ptName').value,
-                type: document.getElementById('ptType').value, amount: parseFloat(document.getElementById('ptAmount').value)
-            });
-            e.target.reset(); saveData();
-        });
-
-        document.getElementById('expenseForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const siteId = getActiveSiteId();
-            if(!siteId) return alert("Select a site first");
-            appData.expenses.push({
-                id: generateId(), siteId, desc: document.getElementById('expDesc').value,
-                amount: parseFloat(document.getElementById('expAmount').value)
-            });
-            e.target.reset(); saveData();
-        });
-
-        document.getElementById('emdForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const siteId = getActiveSiteId();
-            if(!siteId) return alert("Select a site first");
-            appData.emd.push({
-                id: generateId(), siteId, desc: document.getElementById('emdDesc').value,
-                amount: parseFloat(document.getElementById('emdAmount').value)
-            });
-            e.target.reset(); saveData();
-        });
-
+        document.getElementById('partnerTxForm').addEventListener('submit', (e) => { e.preventDefault(); const siteId = getActiveSiteId(); if(!siteId) return alert("Select site"); appData.partnerTx.push({ id: generateId(), siteId, date: document.getElementById('ptDate').value, payType: document.getElementById('ptPayType').value, name: document.getElementById('ptName').value, type: document.getElementById('ptType').value, amount: getAmt('ptAmount') }); e.target.reset(); saveData(); });
+        document.getElementById('expenseForm').addEventListener('submit', (e) => { e.preventDefault(); const siteId = getActiveSiteId(); if(!siteId) return alert("Select site"); appData.expenses.push({ id: generateId(), siteId, date: document.getElementById('expDate').value, payType: document.getElementById('expPayType').value, desc: document.getElementById('expDesc').value, amount: getAmt('expAmount') }); e.target.reset(); saveData(); });
+        document.getElementById('emdForm').addEventListener('submit', (e) => { e.preventDefault(); const siteId = getActiveSiteId(); if(!siteId) return alert("Select site"); appData.emd.push({ id: generateId(), siteId, date: document.getElementById('emdDate').value, payType: document.getElementById('emdPayType').value, desc: document.getElementById('emdDesc').value, amount: getAmt('emdAmount'), releaseDate: document.getElementById('emdReleaseDate').value }); e.target.reset(); saveData(); });
+        
         document.getElementById('billForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const siteId = getActiveSiteId();
-            if(!siteId) return alert("Select a site first");
-            const total = parseFloat(document.getElementById('billTotal').value);
-            const rm = parseFloat(document.getElementById('billRM').value);
-            if(rm > total) return alert("RM cannot be greater than Total Bill");
-            appData.bills.push({
-                id: generateId(), siteId, desc: document.getElementById('billDesc').value,
-                total, rm, received: total - rm
-            });
+            e.preventDefault(); const siteId = getActiveSiteId(); if(!siteId) return alert("Select site");
+            const gross = getAmt('billGross'); const rm = getAmt('billRM'); const ded = getAmt('billDed'); const alloc = getAmt('billAlloc');
+            const net = gross - rm - ded; // Total cash received from govt
+            appData.bills.push({ id: generateId(), siteId, date: document.getElementById('billDate').value, payType: document.getElementById('billPayType').value, desc: document.getElementById('billDesc').value, gross, rm, ded, net, alloc, rmReleaseDate: document.getElementById('billRmRelease').value });
             e.target.reset(); saveData();
         });
 
+        // Analytics
         function calculateSiteStats(siteId) {
-            let inv = 0, wd = 0, exp = 0, emd = 0, billRec = 0;
-            appData.partnerTx.filter(x => x.siteId === siteId).forEach(x => { if(x.type==='invest') inv += x.amount; else wd += x.amount; });
+            let netInv = 0, exp = 0, emdLocked = 0, billRMLocked = 0, billAllocatedToSite = 0;
+            appData.partnerTx.filter(x => x.siteId === siteId).forEach(x => { if(x.type==='invest') netInv += x.amount; else netInv -= x.amount; });
             appData.expenses.filter(x => x.siteId === siteId).forEach(x => exp += x.amount);
-            appData.emd.filter(x => x.siteId === siteId).forEach(x => emd += x.amount);
-            appData.bills.filter(x => x.siteId === siteId).forEach(x => billRec += x.received);
+            appData.emd.filter(x => x.siteId === siteId).forEach(x => { if(!x.releaseDate) emdLocked += x.amount; });
             
-            const netInv = inv - wd;
-            const ded = exp + emd;
-            const remain = netInv + billRec - ded;
-            return { netInv, billRec, ded, remain };
+            appData.bills.filter(x => x.siteId === siteId).forEach(x => {
+                billAllocatedToSite += x.alloc; // Site only gets what was explicitly allocated
+                if(!x.rmReleaseDate) { billRMLocked += x.rm; }
+            });
+            
+            const totalLocked = emdLocked + billRMLocked;
+            const availableCash = netInv - exp - emdLocked + billAllocatedToSite;
+            return { netInv, exp, totalLocked, billAllocatedToSite, availableCash };
+        }
+
+        function calculateCompanyStats(compId) {
+            let totalNetRcvd = 0, totalAllocated = 0, rmReleasedRcvd = 0, corpExp = 0;
+            const compSites = appData.sites.filter(s => s.companyId === compId).map(s => s.id);
+            
+            appData.bills.forEach(b => {
+                if(compSites.includes(b.siteId)) {
+                    totalNetRcvd += b.net;
+                    totalAllocated += b.alloc;
+                    if(b.rmReleaseDate) rmReleasedRcvd += b.rm; // Company keeps released RM
+                }
+            });
+
+            appData.corpExpenses.filter(c => c.compId === compId).forEach(c => corpExp += c.amount);
+
+            // Corporate cash is whatever was received minus what was given to sites, plus released RM
+            const retainedCash = (totalNetRcvd - totalAllocated) + rmReleasedRcvd;
+            const finalReserve = retainedCash - corpExp;
+
+            return { totalNetRcvd: totalNetRcvd + rmReleasedRcvd, totalAllocated, corpExp, finalReserve };
         }
 
         function refreshSiteDashboard() {
             const siteId = getActiveSiteId();
-            if(!siteId) {
-                document.getElementById('siteContentWrapper').style.display = 'none';
-                document.getElementById('noSiteMsg').style.display = 'block';
-                return;
-            }
-            document.getElementById('siteContentWrapper').style.display = 'block';
-            document.getElementById('noSiteMsg').style.display = 'none';
+            if(!siteId) { document.getElementById('siteContentWrapper').style.display = 'none'; document.getElementById('noSiteMsg').style.display = 'block'; return; }
+            document.getElementById('siteContentWrapper').style.display = 'block'; document.getElementById('noSiteMsg').style.display = 'none';
 
-            // KPI
             const stats = calculateSiteStats(siteId);
-            document.getElementById('siteNetInv').textContent = formatCurrency(stats.netInv);
-            document.getElementById('siteBillsRec').textContent = formatCurrency(stats.billRec);
-            document.getElementById('siteDed').textContent = formatCurrency(stats.ded);
-            document.getElementById('siteRemain').textContent = formatCurrency(stats.remain);
+            document.getElementById('siteCash').textContent = formatCurrency(stats.availableCash);
+            document.getElementById('siteLocked').textContent = formatCurrency(stats.totalLocked);
 
-            // Tables
-            const ptBody = document.getElementById('ptTableBody'); ptBody.innerHTML = '';
+            ['pt','exp','emd','bill'].forEach(prefix => { document.getElementById(prefix+'TableBody').innerHTML = ''; });
+            
             appData.partnerTx.filter(x => x.siteId === siteId).forEach(x => {
-                const badge = x.type==='invest' ? `<span class="badge badge-success">Invest</span>` : `<span class="badge badge-danger">Withdraw</span>`;
-                ptBody.innerHTML += `<tr><td>${x.name}</td><td>${badge}</td><td class="currency">${formatCurrency(x.amount)}</td></tr>`;
+                document.getElementById('ptTableBody').innerHTML += `<tr><td>${x.date}</td><td>${x.name}</td><td><span class="badge ${x.type==='invest'?'badge-success':'badge-danger'}">${x.type}</span></td><td><span class="currency">${formatCurrency(x.amount)}</span></td><td style="text-align:right;"><button class="btn-action" onclick="deleteEntry('partnerTx','${x.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
             });
-
-            const expBody = document.getElementById('expTableBody'); expBody.innerHTML = '';
             appData.expenses.filter(x => x.siteId === siteId).forEach(x => {
-                expBody.innerHTML += `<tr><td>${x.desc}</td><td class="currency">${formatCurrency(x.amount)}</td></tr>`;
+                document.getElementById('expTableBody').innerHTML += `<tr><td>${x.date}</td><td>${x.desc}</td><td><span class="currency">${formatCurrency(x.amount)}</span></td><td style="text-align:right;"><button class="btn-action" onclick="deleteEntry('expenses','${x.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
             });
-
-            const emdBody = document.getElementById('emdTableBody'); emdBody.innerHTML = '';
             appData.emd.filter(x => x.siteId === siteId).forEach(x => {
-                emdBody.innerHTML += `<tr><td>${x.desc}</td><td class="currency">${formatCurrency(x.amount)}</td></tr>`;
+                document.getElementById('emdTableBody').innerHTML += `<tr><td>${x.date}</td><td>${x.desc}</td><td><span class="currency">${formatCurrency(x.amount)}</span></td><td>${x.releaseDate?'Released':'Locked'}</td><td style="text-align:right;"><button class="btn-action" onclick="deleteEntry('emd','${x.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
             });
-
-            const billBody = document.getElementById('billTableBody'); billBody.innerHTML = '';
             appData.bills.filter(x => x.siteId === siteId).forEach(x => {
-                billBody.innerHTML += `<tr><td>${x.desc}</td><td class="currency">${formatCurrency(x.total)}</td>
-                <td class="currency">${formatCurrency(x.rm)}</td><td class="currency positive">${formatCurrency(x.received)}</td></tr>`;
+                const retained = x.net - x.alloc;
+                document.getElementById('billTableBody').innerHTML += `<tr><td>${x.date}</td><td>${x.desc}</td><td class="currency">${formatCurrency(x.net)}</td><td class="currency positive">${formatCurrency(x.alloc)}</td><td class="currency highlight-purple">${formatCurrency(retained)}</td><td style="text-align:right;"><button class="btn-action" onclick="deleteEntry('bills','${x.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
+            });
+        }
+
+        function refreshCompanyDashboard() {
+            const compId = document.getElementById('activeCompanySelect').value;
+            if(!compId) { document.getElementById('companyContentWrapper').style.display = 'none'; document.getElementById('noCompanyMsg').style.display = 'block'; return; }
+            document.getElementById('companyContentWrapper').style.display = 'block'; document.getElementById('noCompanyMsg').style.display = 'none';
+
+            const stats = calculateCompanyStats(compId);
+            document.getElementById('corpTotalRcvd').textContent = formatCurrency(stats.totalNetRcvd);
+            document.getElementById('corpTotalAlloc').textContent = formatCurrency(stats.totalAllocated);
+            document.getElementById('corpExpTot').textContent = formatCurrency(stats.corpExp);
+            document.getElementById('corpReserve').textContent = formatCurrency(stats.finalReserve);
+
+            const cBody = document.getElementById('cExpTableBody'); cBody.innerHTML = '';
+            appData.corpExpenses.filter(c => c.compId === compId).forEach(c => {
+                cBody.innerHTML += `<tr><td>${c.date}</td><td>${c.desc}</td><td class="currency negative">${formatCurrency(c.amount)}</td><td style="text-align: right;"><button class="btn-action" onclick="deleteEntry('corpExpenses', '${c.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
             });
         }
 
         function renderGlobalDashboard() {
-            let gNetInv = 0, gBills = 0, gDed = 0, gRemain = 0;
-            const siteBody = document.getElementById('globSiteTable');
-            siteBody.innerHTML = '';
+            let gCash = 0, gLocked = 0, gInv = 0, gCorp = 0;
+            const siteBody = document.getElementById('globSiteTable'); siteBody.innerHTML = '';
+            
+            appData.companies.forEach(c => {
+                const cStats = calculateCompanyStats(c.id);
+                gCorp += cStats.finalReserve;
+            });
 
             appData.sites.forEach(s => {
                 const stats = calculateSiteStats(s.id);
-                gNetInv += stats.netInv; gBills += stats.billRec; gDed += stats.ded; gRemain += stats.remain;
-                
+                gCash += stats.availableCash; gLocked += stats.totalLocked; gInv += stats.netInv;
                 const comp = appData.companies.find(c => c.id === s.companyId);
-                const name = `${comp?comp.name:'?'} - ${s.location}`;
-                
-                siteBody.innerHTML += `<tr>
-                    <td>${name}</td>
-                    <td class="currency">${formatCurrency(stats.netInv)}</td>
-                    <td class="currency positive">${formatCurrency(stats.billRec)}</td>
-                    <td class="currency negative">${formatCurrency(stats.ded)}</td>
-                    <td class="currency" style="color: ${stats.remain < 0 ? 'var(--danger)' : 'var(--accent-primary)'}">${formatCurrency(stats.remain)}</td>
-                </tr>`;
+                siteBody.innerHTML += `<tr><td>${comp?comp.name:'?'} - ${s.location}</td><td class="currency">${formatCurrency(stats.netInv)}</td><td class="currency negative">${formatCurrency(stats.exp)}</td><td class="currency highlight-orange">${formatCurrency(stats.totalLocked)}</td><td class="currency">${formatCurrency(stats.billAllocatedToSite)}</td><td class="currency positive">${formatCurrency(stats.availableCash)}</td></tr>`;
             });
-
-            document.getElementById('globNetInv').textContent = formatCurrency(gNetInv);
-            document.getElementById('globBills').textContent = formatCurrency(gBills);
-            document.getElementById('globDed').textContent = formatCurrency(gDed);
-            document.getElementById('globRemain').textContent = formatCurrency(gRemain);
+            document.getElementById('globCash').textContent = formatCurrency(gCash);
+            document.getElementById('globLocked').textContent = formatCurrency(gLocked);
+            document.getElementById('globInv').textContent = formatCurrency(gInv);
+            document.getElementById('globCorp').textContent = formatCurrency(gCorp);
         }
 
         initApp();
