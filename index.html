@@ -12,7 +12,7 @@
             --bg-color: #0b0c10; --surface-color: rgba(31, 40, 51, 0.6); --border-color: rgba(255, 255, 255, 0.1);
             --text-primary: #ffffff; --text-secondary: #c5c6c7;
             --accent-primary: #66fcf1; --accent-secondary: #45a29e;
-            --danger: #ef233c; --success: #06d6a0; --warning: #ffb703; --orange: #fb8500; --purple: #9d4edd;
+            --danger: #ef233c; --success: #06d6a0; --warning: #ffb703; --orange: #fb8500; --purple: #9d4edd; --blue: #4cc9f0;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Outfit', sans-serif; }
@@ -54,9 +54,12 @@
         .btn-primary:hover { box-shadow: 0 0 15px rgba(102, 252, 241, 0.4); transform: translateY(-2px); }
         .btn-danger { background: rgba(239, 35, 60, 0.2); color: var(--danger); border: 1px solid var(--danger); }
         .btn-danger:hover { background: var(--danger); color: #fff; }
+        .btn-export { background: rgba(6, 214, 160, 0.1); color: var(--success); border: 1px solid var(--success); font-size: 12px; padding: 6px 12px; }
+        .btn-export:hover { background: var(--success); color: #000; }
 
         .btn-action { background: transparent; border: none; color: var(--danger); cursor: pointer; font-size: 15px; padding: 4px; transition: 0.2s; opacity: 0.7; }
         .btn-action:hover { opacity: 1; transform: scale(1.1); }
+        .btn-edit { color: var(--blue); }
 
         .table-container { width: 100%; overflow-x: auto; margin-top: 15px; max-height: 400px; }
         table { width: 100%; border-collapse: collapse; }
@@ -68,8 +71,10 @@
         .badge-success { background: rgba(6, 214, 160, 0.2); color: var(--success); }
         .badge-danger { background: rgba(239, 35, 60, 0.2); color: var(--danger); }
         .badge-warning { background: rgba(255, 183, 3, 0.2); color: var(--warning); }
+        .badge-blue { background: rgba(76, 201, 240, 0.2); color: var(--blue); }
         
         .two-col { display: grid; grid-template-columns: 1fr 1.5fr; gap: 24px; margin-bottom: 24px; }
+        .two-col-equal { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
         .currency { font-family: monospace; font-size: 1.1em; }
         .positive { color: var(--success); }
         .negative { color: var(--danger); }
@@ -84,6 +89,8 @@
         .site-tab.active { background: rgba(102, 252, 241, 0.1); color: var(--accent-primary); }
         .site-tab-content { display: none; }
         .site-tab-content.active { display: block; animation: fadeIn 0.3s; }
+        
+        .flex-between { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
     </style>
 </head>
 <body>
@@ -115,7 +122,7 @@
                 <div class="card glass">
                     <div class="card-header"><span class="card-title">Site Liquid Funds</span><i class="fa-solid fa-wallet" style="color: var(--success)"></i></div>
                     <div class="card-value currency positive" id="globCash">₹0</div>
-                    <div class="card-subtext">Allocated Cash - Expenses</div>
+                    <div class="card-subtext">Cash on hand (all sites)</div>
                 </div>
                 <div class="card glass" style="border: 1px solid var(--orange);">
                     <div class="card-header"><span class="card-title">Locked Receivables</span><i class="fa-solid fa-lock" style="color: var(--orange)"></i></div>
@@ -129,11 +136,14 @@
                 </div>
             </div>
             <div class="card glass" style="margin-bottom: 24px;">
-                <h3 style="margin-bottom: 20px;">Site Wise Breakdown</h3>
+                <div class="flex-between">
+                    <h3>Site Wise Breakdown</h3>
+                    <button class="btn btn-export" onclick="exportTableToCSV('tableGlob', 'Global_Dashboard')"><i class="fa-solid fa-file-excel"></i> Export</button>
+                </div>
                 <div class="table-container">
-                    <table>
+                    <table id="tableGlob">
                         <thead>
-                            <tr><th>Company - Site</th><th>Net Inv</th><th>Expenses</th><th>Locked (EMD+RM)</th><th>Allocated Bill Cash</th><th>Site Cash</th></tr>
+                            <tr><th>Company - Site</th><th>Net Inv</th><th>Total Exp Incurred</th><th>Locked (EMD+RM)</th><th>Allocated Bill Cash</th><th>Site Cash</th></tr>
                         </thead>
                         <tbody id="globSiteTable"></tbody>
                     </table>
@@ -146,22 +156,24 @@
             <div class="header"><h1>Master Setup</h1></div>
             <div class="two-col">
                 <div class="card glass">
-                    <h3 style="margin-bottom: 15px;">Add Company</h3>
+                    <h3 id="formTitle_company" style="margin-bottom: 15px;">Add Company</h3>
                     <form id="companyForm">
                         <div class="form-group"><label>Company Name</label><input type="text" id="companyName" class="form-control" required></div>
-                        <button type="submit" class="btn btn-primary">Add Company</button>
+                        <div style="display:flex;gap:10px;"><button type="submit" class="btn btn-primary" id="btn_company">Save</button><button type="button" class="btn btn-danger" onclick="cancelEdit('company')" style="display:none;" id="cancel_company">Cancel</button></div>
                     </form>
-                    <div class="table-container"><table><thead><tr><th>Company</th><th></th></tr></thead><tbody id="compTableBody"></tbody></table></div>
+                    <div class="flex-between" style="margin-top:20px;"><h4>Companies</h4><button class="btn btn-export" onclick="exportTableToCSV('tableComp', 'Companies')"><i class="fa-solid fa-file-excel"></i> Export</button></div>
+                    <div class="table-container"><table id="tableComp"><thead><tr><th>Company</th><th>Action</th></tr></thead><tbody id="compTableBody"></tbody></table></div>
                 </div>
                 <div class="card glass">
-                    <h3 style="margin-bottom: 15px;">Add Site / Tender</h3>
+                    <h3 id="formTitle_site" style="margin-bottom: 15px;">Add Site / Tender</h3>
                     <form id="siteForm">
                         <div class="form-group"><label>Parent Company</label><select id="siteCompanyId" class="form-control" required></select></div>
                         <div class="form-group"><label>Site/Tender Name</label><input type="text" id="siteName" class="form-control" required></div>
                         <div class="form-group"><label>Department Name of Site</label><input type="text" id="managerName" class="form-control" required></div>
-                        <button type="submit" class="btn btn-primary">Add Site</button>
+                        <div style="display:flex;gap:10px;"><button type="submit" class="btn btn-primary" id="btn_site">Save</button><button type="button" class="btn btn-danger" onclick="cancelEdit('site')" style="display:none;" id="cancel_site">Cancel</button></div>
                     </form>
-                    <div class="table-container"><table><thead><tr><th>Company</th><th>Site</th><th>Department</th><th></th></tr></thead><tbody id="sitesTableBody"></tbody></table></div>
+                    <div class="flex-between" style="margin-top:20px;"><h4>Sites</h4><button class="btn btn-export" onclick="exportTableToCSV('tableSite', 'Sites')"><i class="fa-solid fa-file-excel"></i> Export</button></div>
+                    <div class="table-container"><table id="tableSite"><thead><tr><th>Company</th><th>Site</th><th>Department</th><th>Action</th></tr></thead><tbody id="sitesTableBody"></tbody></table></div>
                 </div>
             </div>
         </div>
@@ -169,87 +181,51 @@
         <!-- Company Dashboard View -->
         <div id="companyDashboardView" class="view">
             <div class="header"><h1>Company Dashboard</h1></div>
-            
-            <div class="selector-bar">
-                <i class="fa-solid fa-building" style="color: var(--purple);"></i>
-                <strong>Select Company:</strong>
-                <select id="activeCompanySelect" class="form-control" onchange="refreshCompanyDashboard()"></select>
-            </div>
+            <div class="selector-bar"><i class="fa-solid fa-building" style="color: var(--purple);"></i><strong>Select Company:</strong><select id="activeCompanySelect" class="form-control" onchange="refreshCompanyDashboard()"></select></div>
 
             <div id="companyContentWrapper" style="display: none;">
                 <div class="dashboard-grid">
-                    <div class="card glass">
-                        <div class="card-header"><span class="card-title">Total Cash Received (Bills)</span></div>
-                        <div class="card-value currency positive" id="corpTotalRcvd">₹0</div>
-                    </div>
-                    <div class="card glass">
-                        <div class="card-header"><span class="card-title">Total Allocated to Sites</span></div>
-                        <div class="card-value currency negative" id="corpTotalAlloc">₹0</div>
-                    </div>
-                    <div class="card glass">
-                        <div class="card-header"><span class="card-title">Corporate Expenses</span></div>
-                        <div class="card-value currency negative" id="corpExpTot">₹0</div>
-                    </div>
-                    <div class="card glass" style="border-left: 4px solid var(--purple);">
-                        <div class="card-header"><span class="card-title">Corporate Cash Reserve</span></div>
-                        <div class="card-value currency highlight-purple" id="corpReserve">₹0</div>
-                    </div>
+                    <div class="card glass"><div class="card-header"><span class="card-title">Total Cash Received (Bills)</span></div><div class="card-value currency positive" id="corpTotalRcvd">₹0</div></div>
+                    <div class="card glass"><div class="card-header"><span class="card-title">Total Allocated to Sites</span></div><div class="card-value currency negative" id="corpTotalAlloc">₹0</div></div>
+                    <div class="card glass"><div class="card-header"><span class="card-title">Corporate Expenses</span></div><div class="card-value currency negative" id="corpExpTot">₹0</div></div>
+                    <div class="card glass" style="border-left: 4px solid var(--purple);"><div class="card-header"><span class="card-title">Corporate Cash Reserve</span></div><div class="card-value currency highlight-purple" id="corpReserve">₹0</div></div>
                 </div>
 
                 <div class="two-col">
                     <div class="card glass">
-                        <h3 style="margin-bottom: 15px;">Add Corporate Expense</h3>
+                        <h3 id="formTitle_corpExpenses" style="margin-bottom: 15px;">Add Corporate Expense</h3>
                         <form id="corpExpenseForm">
-                            <div class="form-row">
-                                <div class="form-group"><label>Date</label><input type="date" id="cExpDate" class="form-control" required></div>
-                                <div class="form-group"><label>Payment Type</label><select id="cExpPayType" class="form-control" required><option value="Account">Account</option><option value="Cash">Cash</option></select></div>
-                            </div>
-                            <div class="form-group"><label>Description (e.g. Office Rent, Salaries)</label><input type="text" id="cExpDesc" class="form-control" required></div>
+                            <div class="form-row"><div class="form-group"><label>Date</label><input type="date" id="cExpDate" class="form-control" required></div><div class="form-group"><label>Payment</label><select id="cExpPayType" class="form-control" required><option value="Account">Account</option><option value="Cash">Cash</option></select></div></div>
+                            <div class="form-group"><label>Description</label><input type="text" id="cExpDesc" class="form-control" required></div>
                             <div class="form-group"><label>Amount (₹)</label><input type="text" id="cExpAmount" class="form-control amt-input" required placeholder="0.00"></div>
-                            <button type="submit" class="btn btn-primary">Add Corp Expense</button>
+                            <div style="display:flex;gap:10px;"><button type="submit" class="btn btn-primary" id="btn_corpExpenses">Save</button><button type="button" class="btn btn-danger" onclick="cancelEdit('corpExpenses')" style="display:none;" id="cancel_corpExpenses">Cancel</button></div>
                         </form>
                     </div>
                     <div class="card glass">
-                        <h3 style="margin-bottom: 15px;">Corporate Expense Log</h3>
-                        <div class="table-container">
-                            <table><thead><tr><th>Date</th><th>Desc</th><th>Amount</th><th></th></tr></thead><tbody id="cExpTableBody"></tbody></table>
-                        </div>
+                        <div class="flex-between"><h4>Corporate Expense Log</h4><button class="btn btn-export" onclick="exportTableToCSV('tableCorp', 'Corp_Expenses')"><i class="fa-solid fa-file-excel"></i> Export</button></div>
+                        <div class="table-container"><table id="tableCorp"><thead><tr><th>Date</th><th>Desc</th><th>Payment Type</th><th>Amount</th><th>Action</th></tr></thead><tbody id="cExpTableBody"></tbody></table></div>
                     </div>
                 </div>
             </div>
             
-            <div id="noCompanyMsg" style="text-align: center; padding: 50px; color: var(--text-secondary);">
-                <i class="fa-solid fa-arrow-pointer" style="font-size: 40px; margin-bottom: 15px; opacity: 0.5;"></i>
-                <h2>Please select a company to view its corporate dashboard</h2>
-            </div>
+            <div id="noCompanyMsg" style="text-align: center; padding: 50px; color: var(--text-secondary);"><h2>Please select a company</h2></div>
         </div>
 
         <!-- Site Dashboard View -->
         <div id="siteDashboardView" class="view">
             <div class="header"><h1>Site Dashboard</h1></div>
-            
-            <div class="selector-bar">
-                <i class="fa-solid fa-filter" style="color: var(--accent-primary);"></i>
-                <strong>Select Site:</strong>
-                <select id="activeSiteSelect" class="form-control" onchange="refreshSiteDashboard()"></select>
-            </div>
+            <div class="selector-bar"><i class="fa-solid fa-filter" style="color: var(--accent-primary);"></i><strong>Select Site:</strong><select id="activeSiteSelect" class="form-control" onchange="refreshSiteDashboard()"></select></div>
 
             <div id="siteContentWrapper" style="display: none;">
                 <div class="dashboard-grid" style="grid-template-columns: repeat(2, 1fr);">
-                    <div class="card glass" style="border-left: 4px solid var(--success);">
-                        <div class="card-header"><span class="card-title">Available Cash</span></div>
-                        <div class="card-value currency positive" id="siteCash">₹0</div>
-                    </div>
-                    <div class="card glass" style="border-left: 4px solid var(--orange);">
-                        <div class="card-header"><span class="card-title">Locked Receivables (EMD + RM)</span></div>
-                        <div class="card-value currency highlight-orange" id="siteLocked">₹0</div>
-                    </div>
+                    <div class="card glass" style="border-left: 4px solid var(--success);"><div class="card-header"><span class="card-title">Available Cash</span></div><div class="card-value currency positive" id="siteCash">₹0</div></div>
+                    <div class="card glass" style="border-left: 4px solid var(--orange);"><div class="card-header"><span class="card-title">Locked Receivables (EMD + RM)</span></div><div class="card-value currency highlight-orange" id="siteLocked">₹0</div></div>
                 </div>
 
                 <div class="card glass">
                     <div class="site-tabs">
                         <div class="site-tab active" onclick="switchSiteTab('partners')">Partners & Inv</div>
-                        <div class="site-tab" onclick="switchSiteTab('expenses')">Expenses</div>
+                        <div class="site-tab" onclick="switchSiteTab('expenses')">Vendors & Expenses</div>
                         <div class="site-tab" onclick="switchSiteTab('emd')">Tender EMD</div>
                         <div class="site-tab" onclick="switchSiteTab('rabills')">RA Bills</div>
                     </div>
@@ -257,54 +233,83 @@
                     <div id="tab-partners" class="site-tab-content active">
                         <div class="two-col">
                             <div>
-                                <h3 style="margin-bottom: 15px;">Add Transaction</h3>
+                                <h3 id="formTitle_partnerTx" style="margin-bottom: 15px;">Add Transaction</h3>
                                 <form id="partnerTxForm">
                                     <div class="form-row"><div class="form-group"><label>Date</label><input type="date" id="ptDate" class="form-control" required></div><div class="form-group"><label>Payment Type</label><select id="ptPayType" class="form-control" required><option value="Account">Account</option><option value="Cash">Cash</option></select></div></div>
                                     <div class="form-group"><label>Partner Name</label><input type="text" id="ptName" class="form-control" required></div>
+                                    <div class="form-group"><label>Description / Details</label><input type="text" id="ptDesc" class="form-control" required></div>
                                     <div class="form-group"><label>Type</label><select id="ptType" class="form-control" required><option value="invest">Invest</option><option value="withdraw">Withdraw</option></select></div>
                                     <div class="form-group"><label>Amount (₹)</label><input type="text" id="ptAmount" class="form-control amt-input" required placeholder="0.00"></div>
-                                    <button type="submit" class="btn btn-primary">Save Transaction</button>
+                                    <div style="display:flex;gap:10px;"><button type="submit" class="btn btn-primary" id="btn_partnerTx">Save</button><button type="button" class="btn btn-danger" onclick="cancelEdit('partnerTx')" style="display:none;" id="cancel_partnerTx">Cancel</button></div>
                                 </form>
                             </div>
-                            <div class="table-container"><table><thead><tr><th>Date</th><th>Partner</th><th>Type</th><th>Amount</th><th></th></tr></thead><tbody id="ptTableBody"></tbody></table></div>
+                            <div>
+                                <div class="flex-between"><h4>Transactions</h4><button class="btn btn-export" onclick="exportTableToCSV('tablePt', 'Partner_Transactions')"><i class="fa-solid fa-file-excel"></i> Export</button></div>
+                                <div class="table-container"><table id="tablePt"><thead><tr><th>Date</th><th>Partner</th><th>Desc</th><th>Type</th><th>Pay Type</th><th>Amount</th><th>Action</th></tr></thead><tbody id="ptTableBody"></tbody></table></div>
+                            </div>
                         </div>
                     </div>
 
+                    <!-- Vendor Ledger -->
                     <div id="tab-expenses" class="site-tab-content">
                         <div class="two-col">
                             <div>
-                                <h3 style="margin-bottom: 15px;">Record Expense</h3>
+                                <h3 id="formTitle_expenses" style="margin-bottom: 15px;">Add Vendor Ledger Entry</h3>
                                 <form id="expenseForm">
                                     <div class="form-row"><div class="form-group"><label>Date</label><input type="date" id="expDate" class="form-control" required></div><div class="form-group"><label>Payment Type</label><select id="expPayType" class="form-control" required><option value="Account">Account</option><option value="Cash">Cash</option></select></div></div>
+                                    <div class="form-group"><label>Vendor Name</label><input type="text" id="expVendor" class="form-control" required></div>
+                                    
+                                    <div class="form-group"><label>Transaction Type</label>
+                                        <select id="expTxType" class="form-control" required>
+                                            <option value="bill">Purchase Bill / Expense Incurred</option>
+                                            <option value="pay_given">Payment Given to Vendor</option>
+                                            <option value="pay_received">Payment Received from Vendor</option>
+                                        </select>
+                                    </div>
+
                                     <div class="form-group"><label>Description</label><input type="text" id="expDesc" class="form-control" required></div>
-                                    <div class="form-group"><label>Total Amount (₹)</label><input type="text" id="expAmount" class="form-control amt-input" required placeholder="0.00"></div>
-                                    <button type="submit" class="btn btn-primary">Add Expense</button>
+                                    <div class="form-group"><label>Amount (₹)</label><input type="text" id="expAmount" class="form-control amt-input" required placeholder="0.00"></div>
+                                    <div style="display:flex;gap:10px;"><button type="submit" class="btn btn-primary" id="btn_expenses">Save</button><button type="button" class="btn btn-danger" onclick="cancelEdit('expenses')" style="display:none;" id="cancel_expenses">Cancel</button></div>
                                 </form>
                             </div>
-                            <div class="table-container"><table><thead><tr><th>Date</th><th>Desc</th><th>Amount</th><th></th></tr></thead><tbody id="expTableBody"></tbody></table></div>
+                            <div>
+                                <div class="flex-between"><h4>Vendor Ledger Entries</h4><button class="btn btn-export" onclick="exportTableToCSV('tableExp', 'Site_Expenses')"><i class="fa-solid fa-file-excel"></i> Export</button></div>
+                                <div class="table-container" style="max-height: 250px;"><table id="tableExp"><thead><tr><th>Date</th><th>Vendor</th><th>Type</th><th>Desc</th><th>Amount</th><th>Action</th></tr></thead><tbody id="expTableBody"></tbody></table></div>
+
+                                <div class="flex-between" style="margin-top: 20px;"><h4>Vendor Balances</h4><button class="btn btn-export" onclick="exportTableToCSV('tableBal', 'Vendor_Balances')"><i class="fa-solid fa-file-excel"></i> Export</button></div>
+                                <div class="table-container" style="max-height: 200px;">
+                                    <table id="tableBal">
+                                        <thead><tr><th>Vendor Name</th><th>Total Billed</th><th>Total Paid Out</th><th>Current Owe Status</th></tr></thead>
+                                        <tbody id="vendorBalBody"></tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <div id="tab-emd" class="site-tab-content">
                         <div class="two-col">
                             <div>
-                                <h3 style="margin-bottom: 15px;">Record EMD (Security Deposit)</h3>
+                                <h3 id="formTitle_emd" style="margin-bottom: 15px;">Record EMD (Security Deposit)</h3>
                                 <form id="emdForm">
                                     <div class="form-row"><div class="form-group"><label>Date</label><input type="date" id="emdDate" class="form-control" required></div><div class="form-group"><label>Payment</label><select id="emdPayType" class="form-control" required><option value="Account">Account</option><option value="Cash">Cash</option></select></div></div>
                                     <div class="form-group"><label>Reference / Tender</label><input type="text" id="emdDesc" class="form-control" required></div>
                                     <div class="form-group"><label>Amount (₹)</label><input type="text" id="emdAmount" class="form-control amt-input" required placeholder="0.00"></div>
                                     <div class="form-group"><label>Release Date (Blank if locked)</label><input type="date" id="emdReleaseDate" class="form-control"></div>
-                                    <button type="submit" class="btn btn-primary">Save EMD</button>
+                                    <div style="display:flex;gap:10px;"><button type="submit" class="btn btn-primary" id="btn_emd">Save</button><button type="button" class="btn btn-danger" onclick="cancelEdit('emd')" style="display:none;" id="cancel_emd">Cancel</button></div>
                                 </form>
                             </div>
-                            <div class="table-container"><table><thead><tr><th>Date</th><th>Ref</th><th>Amount</th><th>Status</th><th></th></tr></thead><tbody id="emdTableBody"></tbody></table></div>
+                            <div>
+                                <div class="flex-between"><h4>EMD Records</h4><button class="btn btn-export" onclick="exportTableToCSV('tableEmd', 'EMD_Records')"><i class="fa-solid fa-file-excel"></i> Export</button></div>
+                                <div class="table-container"><table id="tableEmd"><thead><tr><th>Date</th><th>Ref</th><th>Pay Type</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead><tbody id="emdTableBody"></tbody></table></div>
+                            </div>
                         </div>
                     </div>
 
                     <div id="tab-rabills" class="site-tab-content">
                         <div class="two-col">
                             <div>
-                                <h3 style="margin-bottom: 15px;">Running Account (RA) Bill</h3>
+                                <h3 id="formTitle_bills" style="margin-bottom: 15px;">Running Account (RA) Bill</h3>
                                 <form id="billForm">
                                     <div class="form-row"><div class="form-group"><label>Date</label><input type="date" id="billDate" class="form-control" required></div><div class="form-group"><label>Payment</label><select id="billPayType" class="form-control" required><option value="Account">Account</option><option value="Cash">Cash</option></select></div></div>
                                     <div class="form-group"><label>Bill Reference</label><input type="text" id="billDesc" class="form-control" required></div>
@@ -317,30 +322,33 @@
                                         <div class="form-group"><label>Allocated to Site (₹)</label><input type="text" id="billAlloc" class="form-control amt-input" required></div>
                                     </div>
                                     <div class="form-group"><label>RM Release Date (Blank if locked)</label><input type="date" id="billRmRelease" class="form-control"></div>
-                                    <button type="submit" class="btn btn-primary">Save RA Bill</button>
+                                    <div style="display:flex;gap:10px;"><button type="submit" class="btn btn-primary" id="btn_bills">Save</button><button type="button" class="btn btn-danger" onclick="cancelEdit('bills')" style="display:none;" id="cancel_bills">Cancel</button></div>
                                 </form>
                             </div>
-                            <div class="table-container"><table><thead><tr><th>Date</th><th>Ref</th><th>Net Rcvd</th><th>Alloc to Site</th><th>Retained by Corp</th><th></th></tr></thead><tbody id="billTableBody"></tbody></table></div>
+                            <div>
+                                <div class="flex-between"><h4>RA Bills</h4><button class="btn btn-export" onclick="exportTableToCSV('tableBill', 'RA_Bills')"><i class="fa-solid fa-file-excel"></i> Export</button></div>
+                                <div class="table-container"><table id="tableBill"><thead><tr><th>Date</th><th>Ref</th><th>Net Rcvd</th><th>Alloc to Site</th><th>Retained by Corp</th><th>Status</th><th>Action</th></tr></thead><tbody id="billTableBody"></tbody></table></div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-            
-            <div id="noSiteMsg" style="text-align: center; padding: 50px; color: var(--text-secondary);">
-                <i class="fa-solid fa-arrow-pointer" style="font-size: 40px; margin-bottom: 15px; opacity: 0.5;"></i>
-                <h2>Please select a site to view its dashboard</h2>
-            </div>
+            <div id="noSiteMsg" style="text-align: center; padding: 50px; color: var(--text-secondary);"><h2>Please select a site</h2></div>
         </div>
     </div>
 
     <script>
         let appData = { companies: [], sites: [], partnerTx: [], expenses: [], emd: [], bills: [], corpExpenses: [] };
-        const STORAGE_KEY = 'bizflow_data_v4';
+        let editState = { col: null, id: null };
+        const STORAGE_KEY = 'bizflow_data_v6';
 
         function initApp() {
             const savedData = localStorage.getItem(STORAGE_KEY);
             if (savedData) appData = JSON.parse(savedData);
             setupInputFormatting(); updateDropdowns(); renderSetupTables(); renderGlobalDashboard(); refreshSiteDashboard(); refreshCompanyDashboard();
+            setToday();
+        }
+        function setToday() {
             const today = new Date().toISOString().split('T')[0];
             document.querySelectorAll('input[type="date"]').forEach(el => { if(!el.id.includes('Release')) el.value = today; });
         }
@@ -356,13 +364,63 @@
             }
         }
 
+        function cancelEdit(col) {
+            editState = { col: null, id: null };
+            document.getElementById('btn_'+col).textContent = 'Save';
+            document.getElementById('cancel_'+col).style.display = 'none';
+            document.getElementById('formTitle_'+col).textContent = 'Add Record';
+            
+            if(col === 'company') document.getElementById('companyForm').reset();
+            if(col === 'site') document.getElementById('siteForm').reset();
+            if(col === 'partnerTx') document.getElementById('partnerTxForm').reset();
+            if(col === 'expenses') document.getElementById('expenseForm').reset();
+            if(col === 'emd') document.getElementById('emdForm').reset();
+            if(col === 'bills') document.getElementById('billForm').reset();
+            if(col === 'corpExpenses') document.getElementById('corpExpenseForm').reset();
+            setToday();
+        }
+
+        function setEditState(col, id, obj) {
+            editState = { col, id };
+            document.getElementById('btn_'+col).textContent = 'Update';
+            document.getElementById('cancel_'+col).style.display = 'block';
+            document.getElementById('formTitle_'+col).textContent = 'Edit Record';
+
+            if(col === 'company') { document.getElementById('companyName').value = obj.name; }
+            if(col === 'site') { document.getElementById('siteCompanyId').value = obj.companyId; document.getElementById('siteName').value = obj.location; document.getElementById('managerName').value = obj.manager; }
+            if(col === 'partnerTx') { document.getElementById('ptDate').value = obj.date; document.getElementById('ptPayType').value = obj.payType; document.getElementById('ptName').value = obj.name; document.getElementById('ptDesc').value = obj.desc || ''; document.getElementById('ptType').value = obj.type; document.getElementById('ptAmount').value = formatNum(obj.amount); }
+            if(col === 'expenses') { document.getElementById('expDate').value = obj.date; document.getElementById('expPayType').value = obj.payType; document.getElementById('expVendor').value = obj.vendor || ''; document.getElementById('expTxType').value = obj.txType || 'bill'; document.getElementById('expDesc').value = obj.desc; document.getElementById('expAmount').value = formatNum(obj.amount); }
+            if(col === 'emd') { document.getElementById('emdDate').value = obj.date; document.getElementById('emdPayType').value = obj.payType; document.getElementById('emdDesc').value = obj.desc; document.getElementById('emdAmount').value = formatNum(obj.amount); document.getElementById('emdReleaseDate').value = obj.releaseDate || ''; }
+            if(col === 'bills') { document.getElementById('billDate').value = obj.date; document.getElementById('billPayType').value = obj.payType; document.getElementById('billDesc').value = obj.desc; document.getElementById('billGross').value = formatNum(obj.gross); document.getElementById('billRM').value = formatNum(obj.rm); document.getElementById('billDed').value = formatNum(obj.ded); document.getElementById('billAlloc').value = formatNum(obj.alloc); document.getElementById('billRmRelease').value = obj.rmReleaseDate || ''; }
+            if(col === 'corpExpenses') { document.getElementById('cExpDate').value = obj.date; document.getElementById('cExpPayType').value = obj.payType; document.getElementById('cExpDesc').value = obj.desc; document.getElementById('cExpAmount').value = formatNum(obj.amount); }
+        }
+
+        function editEntry(col, id) {
+            const obj = appData[col === 'company'?'companies':col==='site'?'sites':col].find(x => x.id === id);
+            if(obj) setEditState(col, id, obj);
+        }
+
+        function saveOrUpdate(col, newObj) {
+            const actualCol = col === 'company' ? 'companies' : col === 'site' ? 'sites' : col;
+            if(editState.id && editState.col === col) {
+                const idx = appData[actualCol].findIndex(x => x.id === editState.id);
+                if(idx !== -1) appData[actualCol][idx] = { ...newObj, id: editState.id };
+                cancelEdit(col);
+            } else {
+                newObj.id = generateId();
+                appData[actualCol].push(newObj);
+            }
+            saveData();
+        }
+
         function generateId() { return Math.random().toString(36).substr(2, 9); }
+        function formatNum(num) { return new Intl.NumberFormat('en-IN').format(num || 0); }
         function formatCurrency(amount) { return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount || 0); }
         function parseInputToFloat(val) { if(!val) return 0; return parseFloat(val.toString().replace(/[^0-9.-]+/g,"")) || 0; }
         
         function setupInputFormatting() {
             document.querySelectorAll('.amt-input').forEach(input => {
-                input.addEventListener('blur', function(e) { let val = parseInputToFloat(e.target.value); if(val) e.target.value = new Intl.NumberFormat('en-IN').format(val); });
+                input.addEventListener('blur', function(e) { let val = parseInputToFloat(e.target.value); if(val) e.target.value = formatNum(val); });
                 input.addEventListener('focus', function(e) { let val = parseInputToFloat(e.target.value); if(val) e.target.value = val; });
             });
         }
@@ -381,25 +439,42 @@
             document.getElementById('tab-' + tabId).classList.add('active');
         }
 
+        // CSV Export
+        function exportTableToCSV(tableId, filename) {
+            const table = document.getElementById(tableId);
+            let csv = [];
+            for (let i = 0; i < table.rows.length; i++) {
+                let row = [], cols = table.rows[i].querySelectorAll("td, th");
+                for (let j = 0; j < cols.length - 1; j++) {
+                    let data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, "").replace(/,/g, "");
+                    row.push('"' + data + '"');
+                }
+                csv.push(row.join(","));
+            }
+            const csvFile = new Blob([csv.join("\n")], { type: "text/csv" });
+            const link = document.createElement("a");
+            link.download = filename + ".csv";
+            link.href = window.URL.createObjectURL(csvFile);
+            link.click();
+        }
+
         // Setup Forms
-        document.getElementById('companyForm').addEventListener('submit', (e) => { e.preventDefault(); appData.companies.push({ id: generateId(), name: document.getElementById('companyName').value }); e.target.reset(); saveData(); });
-        document.getElementById('siteForm').addEventListener('submit', (e) => { e.preventDefault(); appData.sites.push({ id: generateId(), companyId: document.getElementById('siteCompanyId').value, location: document.getElementById('siteName').value, manager: document.getElementById('managerName').value }); e.target.reset(); saveData(); });
+        document.getElementById('companyForm').addEventListener('submit', (e) => { e.preventDefault(); saveOrUpdate('company', { name: document.getElementById('companyName').value }); e.target.reset(); setToday(); });
+        document.getElementById('siteForm').addEventListener('submit', (e) => { e.preventDefault(); saveOrUpdate('site', { companyId: document.getElementById('siteCompanyId').value, location: document.getElementById('siteName').value, manager: document.getElementById('managerName').value }); e.target.reset(); setToday(); });
         
         document.getElementById('corpExpenseForm').addEventListener('submit', (e) => {
             e.preventDefault(); const compId = document.getElementById('activeCompanySelect').value; if(!compId) return alert("Select company");
-            appData.corpExpenses.push({ id: generateId(), compId, date: document.getElementById('cExpDate').value, payType: document.getElementById('cExpPayType').value, desc: document.getElementById('cExpDesc').value, amount: getAmt('cExpAmount') });
-            e.target.reset(); saveData();
+            saveOrUpdate('corpExpenses', { compId, date: document.getElementById('cExpDate').value, payType: document.getElementById('cExpPayType').value, desc: document.getElementById('cExpDesc').value, amount: getAmt('cExpAmount') });
+            e.target.reset(); setToday();
         });
 
         function updateDropdowns() {
             const compSel = document.getElementById('siteCompanyId'); compSel.innerHTML = '<option value="">-- Select Company --</option>';
             appData.companies.forEach(c => compSel.innerHTML += `<option value="${c.id}">${c.name}</option>`);
-            
             const aCompSel = document.getElementById('activeCompanySelect'); const cVal = aCompSel.value;
             aCompSel.innerHTML = '<option value="">-- Select Company --</option>';
             appData.companies.forEach(c => aCompSel.innerHTML += `<option value="${c.id}">${c.name}</option>`);
             if(cVal) aCompSel.value = cVal;
-
             const siteSel = document.getElementById('activeSiteSelect'); const currentVal = siteSel.value;
             siteSel.innerHTML = '<option value="">-- Select a Site --</option>';
             appData.sites.forEach(s => { const comp = appData.companies.find(c => c.id === s.companyId); siteSel.innerHTML += `<option value="${s.id}">${comp?comp.name:'?'} - ${s.location}</option>`; });
@@ -408,62 +483,64 @@
 
         function renderSetupTables() {
             const cBody = document.getElementById('compTableBody'); cBody.innerHTML = '';
-            appData.companies.forEach(c => cBody.innerHTML += `<tr><td>${c.name}</td><td style="text-align: right;"><button class="btn-action" onclick="deleteEntry('companies', '${c.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`);
+            appData.companies.forEach(c => cBody.innerHTML += `<tr><td>${c.name}</td><td style="text-align: right; width: 80px;"><button class="btn-action btn-edit" onclick="editEntry('company', '${c.id}')"><i class="fa-solid fa-pen"></i></button><button class="btn-action" onclick="deleteEntry('companies', '${c.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`);
             const sBody = document.getElementById('sitesTableBody'); sBody.innerHTML = '';
-            appData.sites.forEach(s => { const comp = appData.companies.find(c => c.id === s.companyId); sBody.innerHTML += `<tr><td>${comp?comp.name:''}</td><td>${s.location}</td><td>${s.manager}</td><td style="text-align: right;"><button class="btn-action" onclick="deleteEntry('sites', '${s.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`; });
+            appData.sites.forEach(s => { const comp = appData.companies.find(c => c.id === s.companyId); sBody.innerHTML += `<tr><td>${comp?comp.name:''}</td><td>${s.location}</td><td>${s.manager}</td><td style="text-align: right; width: 80px;"><button class="btn-action btn-edit" onclick="editEntry('site', '${s.id}')"><i class="fa-solid fa-pen"></i></button><button class="btn-action" onclick="deleteEntry('sites', '${s.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`; });
         }
 
         // Transactions
         function getActiveSiteId() { return document.getElementById('activeSiteSelect').value; }
 
-        document.getElementById('partnerTxForm').addEventListener('submit', (e) => { e.preventDefault(); const siteId = getActiveSiteId(); if(!siteId) return alert("Select site"); appData.partnerTx.push({ id: generateId(), siteId, date: document.getElementById('ptDate').value, payType: document.getElementById('ptPayType').value, name: document.getElementById('ptName').value, type: document.getElementById('ptType').value, amount: getAmt('ptAmount') }); e.target.reset(); saveData(); });
-        document.getElementById('expenseForm').addEventListener('submit', (e) => { e.preventDefault(); const siteId = getActiveSiteId(); if(!siteId) return alert("Select site"); appData.expenses.push({ id: generateId(), siteId, date: document.getElementById('expDate').value, payType: document.getElementById('expPayType').value, desc: document.getElementById('expDesc').value, amount: getAmt('expAmount') }); e.target.reset(); saveData(); });
-        document.getElementById('emdForm').addEventListener('submit', (e) => { e.preventDefault(); const siteId = getActiveSiteId(); if(!siteId) return alert("Select site"); appData.emd.push({ id: generateId(), siteId, date: document.getElementById('emdDate').value, payType: document.getElementById('emdPayType').value, desc: document.getElementById('emdDesc').value, amount: getAmt('emdAmount'), releaseDate: document.getElementById('emdReleaseDate').value }); e.target.reset(); saveData(); });
+        document.getElementById('partnerTxForm').addEventListener('submit', (e) => { e.preventDefault(); const siteId = getActiveSiteId(); if(!siteId) return alert("Select site"); saveOrUpdate('partnerTx', { siteId, date: document.getElementById('ptDate').value, payType: document.getElementById('ptPayType').value, name: document.getElementById('ptName').value, desc: document.getElementById('ptDesc').value, type: document.getElementById('ptType').value, amount: getAmt('ptAmount') }); e.target.reset(); setToday(); });
+        document.getElementById('expenseForm').addEventListener('submit', (e) => { 
+            e.preventDefault(); const siteId = getActiveSiteId(); if(!siteId) return alert("Select site"); 
+            saveOrUpdate('expenses', { siteId, date: document.getElementById('expDate').value, payType: document.getElementById('expPayType').value, vendor: document.getElementById('expVendor').value, txType: document.getElementById('expTxType').value, desc: document.getElementById('expDesc').value, amount: getAmt('expAmount') }); 
+            e.target.reset(); setToday(); 
+        });
+        document.getElementById('emdForm').addEventListener('submit', (e) => { e.preventDefault(); const siteId = getActiveSiteId(); if(!siteId) return alert("Select site"); saveOrUpdate('emd', { siteId, date: document.getElementById('emdDate').value, payType: document.getElementById('emdPayType').value, desc: document.getElementById('emdDesc').value, amount: getAmt('emdAmount'), releaseDate: document.getElementById('emdReleaseDate').value }); e.target.reset(); setToday(); });
         
         document.getElementById('billForm').addEventListener('submit', (e) => {
             e.preventDefault(); const siteId = getActiveSiteId(); if(!siteId) return alert("Select site");
-            const gross = getAmt('billGross'); const rm = getAmt('billRM'); const ded = getAmt('billDed'); const alloc = getAmt('billAlloc');
-            const net = gross - rm - ded; // Total cash received from govt
-            appData.bills.push({ id: generateId(), siteId, date: document.getElementById('billDate').value, payType: document.getElementById('billPayType').value, desc: document.getElementById('billDesc').value, gross, rm, ded, net, alloc, rmReleaseDate: document.getElementById('billRmRelease').value });
-            e.target.reset(); saveData();
+            const gross = getAmt('billGross'), rm = getAmt('billRM'), ded = getAmt('billDed'), alloc = getAmt('billAlloc');
+            saveOrUpdate('bills', { siteId, date: document.getElementById('billDate').value, payType: document.getElementById('billPayType').value, desc: document.getElementById('billDesc').value, gross, rm, ded, net: gross - rm - ded, alloc, rmReleaseDate: document.getElementById('billRmRelease').value });
+            e.target.reset(); setToday();
         });
 
         // Analytics
+        function isReleased(dateStr) { if(!dateStr) return false; const today = new Date().toISOString().split('T')[0]; return dateStr <= today; }
+
         function calculateSiteStats(siteId) {
-            let netInv = 0, exp = 0, emdLocked = 0, billRMLocked = 0, billAllocatedToSite = 0;
+            let netInv = 0, exp = 0, cashOut = 0, cashIn = 0, emdLocked = 0, billRMLocked = 0, billAllocatedToSite = 0;
+            let vBal = {};
+
             appData.partnerTx.filter(x => x.siteId === siteId).forEach(x => { if(x.type==='invest') netInv += x.amount; else netInv -= x.amount; });
-            appData.expenses.filter(x => x.siteId === siteId).forEach(x => exp += x.amount);
-            appData.emd.filter(x => x.siteId === siteId).forEach(x => { if(!x.releaseDate) emdLocked += x.amount; });
             
-            appData.bills.filter(x => x.siteId === siteId).forEach(x => {
-                billAllocatedToSite += x.alloc; // Site only gets what was explicitly allocated
-                if(!x.rmReleaseDate) { billRMLocked += x.rm; }
+            // Vendor Ledger Logic
+            appData.expenses.filter(x => x.siteId === siteId).forEach(x => {
+                const amt = x.amount; const v = x.vendor || 'Unknown';
+                if(!vBal[v]) vBal[v] = { billed: 0, paid: 0 };
+
+                if(x.txType === 'bill') { exp += amt; vBal[v].billed += amt; }
+                else if(x.txType === 'pay_given') { cashOut += amt; vBal[v].paid += amt; }
+                else if(x.txType === 'pay_received') { cashIn += amt; vBal[v].paid -= amt; }
+                else { exp += amt; cashOut += amt; } // Legacy fallback
             });
+
+            appData.emd.filter(x => x.siteId === siteId).forEach(x => { if(!isReleased(x.releaseDate)) emdLocked += x.amount; });
+            appData.bills.filter(x => x.siteId === siteId).forEach(x => { billAllocatedToSite += x.alloc; if(!isReleased(x.rmReleaseDate)) { billRMLocked += x.rm; } });
             
             const totalLocked = emdLocked + billRMLocked;
-            const availableCash = netInv - exp - emdLocked + billAllocatedToSite;
-            return { netInv, exp, totalLocked, billAllocatedToSite, availableCash };
+            const availableCash = netInv - cashOut + cashIn - emdLocked + billAllocatedToSite;
+            return { netInv, exp, totalLocked, billAllocatedToSite, availableCash, vendorBalances: vBal };
         }
 
         function calculateCompanyStats(compId) {
             let totalNetRcvd = 0, totalAllocated = 0, rmReleasedRcvd = 0, corpExp = 0;
             const compSites = appData.sites.filter(s => s.companyId === compId).map(s => s.id);
-            
-            appData.bills.forEach(b => {
-                if(compSites.includes(b.siteId)) {
-                    totalNetRcvd += b.net;
-                    totalAllocated += b.alloc;
-                    if(b.rmReleaseDate) rmReleasedRcvd += b.rm; // Company keeps released RM
-                }
-            });
-
+            appData.bills.forEach(b => { if(compSites.includes(b.siteId)) { totalNetRcvd += b.net; totalAllocated += b.alloc; if(isReleased(b.rmReleaseDate)) rmReleasedRcvd += b.rm; } });
             appData.corpExpenses.filter(c => c.compId === compId).forEach(c => corpExp += c.amount);
-
-            // Corporate cash is whatever was received minus what was given to sites, plus released RM
             const retainedCash = (totalNetRcvd - totalAllocated) + rmReleasedRcvd;
-            const finalReserve = retainedCash - corpExp;
-
-            return { totalNetRcvd: totalNetRcvd + rmReleasedRcvd, totalAllocated, corpExp, finalReserve };
+            return { totalNetRcvd: totalNetRcvd + rmReleasedRcvd, totalAllocated, corpExp, finalReserve: retainedCash - corpExp };
         }
 
         function refreshSiteDashboard() {
@@ -476,19 +553,35 @@
             document.getElementById('siteLocked').textContent = formatCurrency(stats.totalLocked);
 
             ['pt','exp','emd','bill'].forEach(prefix => { document.getElementById(prefix+'TableBody').innerHTML = ''; });
+            document.getElementById('vendorBalBody').innerHTML = '';
             
             appData.partnerTx.filter(x => x.siteId === siteId).forEach(x => {
-                document.getElementById('ptTableBody').innerHTML += `<tr><td>${x.date}</td><td>${x.name}</td><td><span class="badge ${x.type==='invest'?'badge-success':'badge-danger'}">${x.type}</span></td><td><span class="currency">${formatCurrency(x.amount)}</span></td><td style="text-align:right;"><button class="btn-action" onclick="deleteEntry('partnerTx','${x.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
+                document.getElementById('ptTableBody').innerHTML += `<tr><td>${x.date}</td><td>${x.name}</td><td>${x.desc||''}</td><td><span class="badge ${x.type==='invest'?'badge-success':'badge-danger'}">${x.type}</span></td><td>${x.payType}</td><td><span class="currency">${formatCurrency(x.amount)}</span></td><td style="text-align:right; width: 80px;"><button class="btn-action btn-edit" onclick="editEntry('partnerTx','${x.id}')"><i class="fa-solid fa-pen"></i></button><button class="btn-action" onclick="deleteEntry('partnerTx','${x.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
             });
+            
             appData.expenses.filter(x => x.siteId === siteId).forEach(x => {
-                document.getElementById('expTableBody').innerHTML += `<tr><td>${x.date}</td><td>${x.desc}</td><td><span class="currency">${formatCurrency(x.amount)}</span></td><td style="text-align:right;"><button class="btn-action" onclick="deleteEntry('expenses','${x.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
+                let badge = '';
+                if(x.txType === 'bill') badge = '<span class="badge badge-warning">Bill</span>';
+                else if(x.txType === 'pay_given') badge = '<span class="badge badge-success">Pay Out</span>';
+                else if(x.txType === 'pay_received') badge = '<span class="badge badge-blue">Pay In</span>';
+
+                document.getElementById('expTableBody').innerHTML += `<tr><td>${x.date}</td><td>${x.vendor||'-'}</td><td>${badge}</td><td>${x.desc}</td><td><span class="currency">${formatCurrency(x.amount)}</span></td><td style="text-align:right; width: 80px;"><button class="btn-action btn-edit" onclick="editEntry('expenses','${x.id}')"><i class="fa-solid fa-pen"></i></button><button class="btn-action" onclick="deleteEntry('expenses','${x.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
             });
+
+            // Render Vendor Balances
+            Object.keys(stats.vendorBalances).forEach(v => {
+                const b = stats.vendorBalances[v];
+                const owe = b.billed - b.paid;
+                const status = owe > 0 ? `<span class="badge badge-danger">Owe ${formatCurrency(owe)}</span>` : owe < 0 ? `<span class="badge badge-success">Advance ${formatCurrency(Math.abs(owe))}</span>` : `<span class="badge badge-blue">Settled</span>`;
+                document.getElementById('vendorBalBody').innerHTML += `<tr><td><strong>${v}</strong></td><td class="currency">${formatCurrency(b.billed)}</td><td class="currency">${formatCurrency(b.paid)}</td><td>${status}</td></tr>`;
+            });
+
             appData.emd.filter(x => x.siteId === siteId).forEach(x => {
-                document.getElementById('emdTableBody').innerHTML += `<tr><td>${x.date}</td><td>${x.desc}</td><td><span class="currency">${formatCurrency(x.amount)}</span></td><td>${x.releaseDate?'Released':'Locked'}</td><td style="text-align:right;"><button class="btn-action" onclick="deleteEntry('emd','${x.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
+                document.getElementById('emdTableBody').innerHTML += `<tr><td>${x.date}</td><td>${x.desc}</td><td>${x.payType}</td><td><span class="currency">${formatCurrency(x.amount)}</span></td><td>${isReleased(x.releaseDate)?'Released':'Locked until '+x.releaseDate}</td><td style="text-align:right; width: 80px;"><button class="btn-action btn-edit" onclick="editEntry('emd','${x.id}')"><i class="fa-solid fa-pen"></i></button><button class="btn-action" onclick="deleteEntry('emd','${x.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
             });
             appData.bills.filter(x => x.siteId === siteId).forEach(x => {
                 const retained = x.net - x.alloc;
-                document.getElementById('billTableBody').innerHTML += `<tr><td>${x.date}</td><td>${x.desc}</td><td class="currency">${formatCurrency(x.net)}</td><td class="currency positive">${formatCurrency(x.alloc)}</td><td class="currency highlight-purple">${formatCurrency(retained)}</td><td style="text-align:right;"><button class="btn-action" onclick="deleteEntry('bills','${x.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
+                document.getElementById('billTableBody').innerHTML += `<tr><td>${x.date}</td><td>${x.desc}</td><td class="currency">${formatCurrency(x.net)}</td><td class="currency positive">${formatCurrency(x.alloc)}</td><td class="currency highlight-purple">${formatCurrency(retained)}</td><td>${isReleased(x.rmReleaseDate)?'Released':'Locked'}</td><td style="text-align:right; width: 80px;"><button class="btn-action btn-edit" onclick="editEntry('bills','${x.id}')"><i class="fa-solid fa-pen"></i></button><button class="btn-action" onclick="deleteEntry('bills','${x.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
             });
         }
 
@@ -505,7 +598,7 @@
 
             const cBody = document.getElementById('cExpTableBody'); cBody.innerHTML = '';
             appData.corpExpenses.filter(c => c.compId === compId).forEach(c => {
-                cBody.innerHTML += `<tr><td>${c.date}</td><td>${c.desc}</td><td class="currency negative">${formatCurrency(c.amount)}</td><td style="text-align: right;"><button class="btn-action" onclick="deleteEntry('corpExpenses', '${c.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
+                cBody.innerHTML += `<tr><td>${c.date}</td><td>${c.desc}</td><td>${c.payType}</td><td class="currency negative">${formatCurrency(c.amount)}</td><td style="text-align: right; width: 80px;"><button class="btn-action btn-edit" onclick="editEntry('corpExpenses', '${c.id}')"><i class="fa-solid fa-pen"></i></button><button class="btn-action" onclick="deleteEntry('corpExpenses', '${c.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
             });
         }
 
@@ -513,10 +606,7 @@
             let gCash = 0, gLocked = 0, gInv = 0, gCorp = 0;
             const siteBody = document.getElementById('globSiteTable'); siteBody.innerHTML = '';
             
-            appData.companies.forEach(c => {
-                const cStats = calculateCompanyStats(c.id);
-                gCorp += cStats.finalReserve;
-            });
+            appData.companies.forEach(c => { gCorp += calculateCompanyStats(c.id).finalReserve; });
 
             appData.sites.forEach(s => {
                 const stats = calculateSiteStats(s.id);
