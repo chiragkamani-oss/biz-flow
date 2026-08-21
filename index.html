@@ -7,13 +7,21 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
     <style>
         :root {
             --bg-color: #0b0c10; --surface-color: rgba(31, 40, 51, 0.6); --border-color: rgba(255, 255, 255, 0.1);
             --text-primary: #ffffff; --text-secondary: #c5c6c7;
             --accent-primary: #66fcf1; --accent-secondary: #45a29e;
             --danger: #ef233c; --success: #06d6a0; --warning: #ffb703; --orange: #fb8500; --purple: #9d4edd; --blue: #4cc9f0;
+            color-scheme: dark;
         }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(102, 252, 241, 0.3); border-radius: 4px; border: 1px solid rgba(0,0,0,0.2); }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(102, 252, 241, 0.6); }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Outfit', sans-serif; }
         body { background-color: var(--bg-color); background-image: radial-gradient(circle at 15% 50%, rgba(102, 252, 241, 0.05), transparent 25%), radial-gradient(circle at 85% 30%, rgba(157, 78, 221, 0.08), transparent 25%); color: var(--text-primary); display: flex; height: 100vh; overflow: hidden; }
@@ -44,10 +52,10 @@
         .form-row .form-group { flex: 1; margin-bottom: 0; }
         .form-group { margin-bottom: 16px; }
         .form-group label { display: block; margin-bottom: 6px; font-size: 13px; color: var(--text-secondary); }
-        .form-control { width: 100%; padding: 12px 16px; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-size: 14px; transition: border-color 0.3s; }
+        .form-control { width: 100%; padding: 12px 16px; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-size: 14px; transition: border-color 0.3s; color-scheme: dark; }
         .form-control:focus { outline: none; border-color: var(--accent-primary); }
         select.form-control option { background-color: var(--bg-color); color: var(--text-primary); }
-        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
+        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.8) sepia(1) hue-rotate(135deg) saturate(3); cursor: pointer; }
 
         .btn { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.3s; display: inline-flex; align-items: center; gap: 8px; }
         .btn-primary { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); color: #000; }
@@ -73,8 +81,10 @@
         .badge-warning { background: rgba(255, 183, 3, 0.2); color: var(--warning); }
         .badge-blue { background: rgba(76, 201, 240, 0.2); color: var(--blue); }
         
-        .two-col { display: grid; grid-template-columns: 1fr 1.5fr; gap: 24px; margin-bottom: 24px; }
+        .two-col { display: grid; grid-template-columns: 350px 1fr; gap: 24px; margin-bottom: 24px; }
+        .two-col > div, .two-col-equal > div { min-width: 0; } /* Fix grid blowout */
         .two-col-equal { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+        @media (max-width: 1200px) { .two-col, .two-col-equal { grid-template-columns: 1fr; } }
         .currency { font-family: monospace; font-size: 1.1em; }
         .positive { color: var(--success); }
         .negative { color: var(--danger); }
@@ -91,6 +101,117 @@
         .site-tab-content.active { display: block; animation: fadeIn 0.3s; }
         
         .flex-between { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+
+        /* Organization Hierarchy Styles */
+        .hierarchy-container { margin-top: 20px; }
+        .org-company-card { background: rgba(31, 40, 51, 0.8); border: 1px solid var(--border-color); border-radius: 12px; margin-bottom: 20px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .org-company-header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: linear-gradient(90deg, rgba(157, 78, 221, 0.1) 0%, transparent 100%); border-bottom: 1px solid rgba(255,255,255,0.05); transition: 0.3s; }
+        .org-company-header:hover { background: linear-gradient(90deg, rgba(157, 78, 221, 0.2) 0%, transparent 100%); }
+        .org-company-title { font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+        .org-company-title i { color: var(--purple); }
+        .org-sites-list { padding: 15px 20px 20px 40px; display: none; position: relative; }
+        .org-sites-list.active { display: block; animation: fadeIn 0.3s; }
+        .org-sites-list::before { content: ''; position: absolute; left: 28px; top: 0; bottom: 30px; width: 2px; background: rgba(255,255,255,0.1); }
+        .org-site-item { padding: 12px 16px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; position: relative; transition: 0.3s; }
+        .org-site-item:hover { border-color: var(--accent-primary); transform: translateX(5px); }
+        .org-site-item::before { content: ''; position: absolute; left: -12px; top: 50%; width: 12px; height: 2px; background: rgba(255,255,255,0.1); }
+        .org-site-header { display: flex; justify-content: space-between; align-items: center; width: 100%; cursor: pointer; }
+        .org-site-info { display: flex; flex-direction: column; gap: 4px; }
+        .org-site-name { font-weight: 500; font-size: 15px; color: var(--accent-primary); }
+        .org-site-dept { font-size: 12px; color: var(--text-secondary); }
+        .org-entity-list { margin-top: 15px; padding-left: 15px; border-left: 1px solid rgba(255,255,255,0.1); display: none; }
+        .org-entity-list.active { display: block; animation: fadeIn 0.3s; }
+        .org-entity-item { font-size: 13px; color: var(--text-secondary); padding: 8px; display: flex; flex-direction: column; gap: 4px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .org-entity-item:last-child { border-bottom: none; }
+        .org-entity-item i { width: 15px; text-align: center; margin-right: 5px; }
+        .org-fin-stats { display: flex; gap: 10px; font-size: 11px; margin-top: 4px; padding-left: 20px; }
+        .org-fin-stats span { background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; }
+
+        /* Canvas View Styles */
+        .view-toggle { display: flex; gap: 10px; margin-bottom: 20px; }
+        .view-toggle .btn { padding: 6px 15px; font-size: 13px; opacity: 0.6; }
+        .view-toggle .btn.active { opacity: 1; border: 1px solid var(--accent-primary); }
+        
+        .canvas-container { overflow: auto; padding: 20px; min-height: 500px; background: rgba(0,0,0,0.1); border-radius: 12px; border: 1px solid var(--border-color); display: none; }
+        .canvas-container.active { display: block; animation: fadeIn 0.4s; }
+
+        @keyframes rowGlow {
+            0% { background-color: rgba(239, 68, 68, 0.4); box-shadow: 0 0 10px rgba(239, 68, 68, 0.5) inset; }
+            100% { background-color: transparent; box-shadow: none; }
+        }
+        .highlight-glow td {
+            animation: rowGlow 3s ease-out;
+        }
+
+        .list-container { display: none; }
+        .list-container.active { display: block; animation: fadeIn 0.3s; }
+
+        .tree { white-space: nowrap; padding: 20px; display: inline-block; }
+        .tree ul { padding-top: 20px; position: relative; transition: all 0.5s; -webkit-transition: all 0.5s; -moz-transition: all 0.5s; display: flex; gap: 20px; justify-content: center; }
+        .tree li { float: left; text-align: center; list-style-type: none; position: relative; padding: 20px 5px 0 5px; transition: all 0.5s; -webkit-transition: all 0.5s; -moz-transition: all 0.5s; }
+        
+        /* Connecting lines */
+        .tree li::before, .tree li::after { content: ''; position: absolute; top: 0; right: 50%; border-top: 2px solid rgba(255,255,255,0.2); width: 50%; height: 20px; }
+        .tree li::after { right: auto; left: 50%; border-left: 2px solid rgba(255,255,255,0.2); }
+        .tree li:only-child::after, .tree li:only-child::before { display: none; }
+        .tree li:only-child { padding-top: 0; }
+        .tree li:first-child::before, .tree li:last-child::after { border: 0 none; }
+        .tree li:last-child::before { border-right: 2px solid rgba(255,255,255,0.2); border-radius: 0 5px 0 0; }
+        .tree li:first-child::after { border-radius: 5px 0 0 0; }
+        .tree ul ul::before { content: ''; position: absolute; top: 0; left: 50%; border-left: 2px solid rgba(255,255,255,0.2); width: 0; height: 20px; }
+
+        /* Nodes */
+        .tree-node { text-decoration: none; display: inline-block; padding: 12px 20px; border-radius: 12px; transition: all 0.3s; background: rgba(31, 40, 51, 0.8); border: 1px solid var(--border-color); box-shadow: 0 4px 15px rgba(0,0,0,0.2); min-width: 150px; text-align: left; }
+        .tree-node:hover { border-color: var(--accent-primary); transform: translateY(-5px); box-shadow: 0 8px 25px rgba(102, 252, 241, 0.2); }
+        
+        .node-title { font-weight: 600; font-size: 14px; margin-bottom: 5px; display: flex; align-items: center; gap: 8px; }
+        .node-sub { font-size: 11px; color: var(--text-secondary); margin-bottom: 8px; }
+        .node-stats { display: flex; flex-direction: column; gap: 4px; font-size: 11px; }
+        .node-stat-row { display: flex; justify-content: space-between; gap: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 4px; }
+        
+        .node-company { border-top: 3px solid var(--purple); }
+        .node-site { border-top: 3px solid var(--success); }
+        .node-partner { border-top: 3px solid var(--blue); }
+        .node-vendor { border-top: 3px solid var(--warning); }
+        
+        /* Autocomplete Custom UI */
+        .autocomplete-wrapper { position: relative; }
+        .autocomplete-items {
+            position: absolute; border: 1px solid var(--border-color); border-top: none; z-index: 99;
+            top: 100%; left: 0; right: 0; background: rgba(31, 40, 51, 0.95); backdrop-filter: blur(10px);
+            border-radius: 0 0 8px 8px; max-height: 150px; overflow-y: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .autocomplete-items div { padding: 10px; cursor: pointer; color: var(--text-primary); border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; }
+        .autocomplete-items div:hover { background-color: var(--accent-primary); color: #121212; font-weight: 500; }
+        .autocomplete-items div:last-child { border-bottom: none; }
+
+        /* Calendar UI */
+        .calendar-layout { display: flex; gap: 20px; align-items: flex-start; }
+        .calendar-main { flex: 1; }
+        .calendar-details-sidebar { width: 320px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; max-height: calc(100vh - 150px); overflow-y: auto; }
+        .calendar-header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
+        .cal-weekday { text-align: center; font-weight: bold; color: var(--text-secondary); padding-bottom: 10px; }
+        .cal-cell { background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; min-height: 100px; padding: 8px; cursor: pointer; transition: all 0.2s; position: relative; }
+        .cal-cell:hover { background: rgba(255,255,255,0.08); border-color: var(--accent-primary); }
+        .cal-cell.today { border: 1px solid var(--accent-primary); box-shadow: 0 0 10px rgba(0,242,254,0.1); }
+        .cal-cell.empty-cell { background: transparent; border: none; cursor: default; }
+        .cal-date-num { font-size: 14px; color: var(--text-secondary); margin-bottom: 5px; font-weight: bold; }
+        .cal-badges { display: flex; flex-direction: column; gap: 4px; }
+        .cal-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: uppercase; }
+        .badge-partner { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
+        .badge-vendor { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+        .badge-bill { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); }
+        .badge-emd { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+
+        /* Audit Logs UI */
+        .audit-table { width: 100%; border-collapse: collapse; }
+        .audit-table th { background: rgba(0,0,0,0.3); padding: 15px; text-align: left; font-size: 13px; text-transform: uppercase; color: var(--text-secondary); }
+        .audit-table td { padding: 15px; border-bottom: 1px solid var(--border-color); vertical-align: top; font-size: 14px; }
+        .audit-change-list { margin: 8px 0 0 0; padding-left: 20px; font-size: 13px; }
+        .audit-change-list li { margin-bottom: 4px; color: var(--text-primary); }
+        .val-old { text-decoration: line-through; color: var(--danger); margin-right: 8px; }
+        .val-new { color: var(--success); font-weight: bold; }
     </style>
 </head>
 <body>
@@ -101,6 +222,9 @@
         <div class="nav-item" onclick="switchView('setup')"><i class="fa-solid fa-gears"></i> Master Setup</div>
         <div class="nav-item" onclick="switchView('companyDashboard')"><i class="fa-solid fa-building"></i> Company Dashboard</div>
         <div class="nav-item" onclick="switchView('siteDashboard')"><i class="fa-solid fa-map-location-dot"></i> Site Dashboard</div>
+        <div class="nav-item" onclick="switchView('calendar')"><i class="fa-regular fa-calendar-days"></i> Financial Calendar</div>
+        <div class="nav-item" onclick="switchView('orgHierarchy')"><i class="fa-solid fa-sitemap"></i> Organization Hierarchy</div>
+        <div class="nav-item" onclick="switchView('auditLogs')"><i class="fa-solid fa-list-check"></i> Audit Logs</div>
         
         <div class="sidebar-bottom">
             <button class="btn btn-danger" style="width: 100%; justify-content: center;" onclick="resetApp()">
@@ -120,25 +244,48 @@
                     <div class="card-subtext">Retained by Parent Companies</div>
                 </div>
                 <div class="card glass">
-                    <div class="card-header"><span class="card-title">Site Liquid Funds</span><i class="fa-solid fa-wallet" style="color: var(--success)"></i></div>
-                    <div class="card-value currency positive" id="globCash">₹0</div>
-                    <div class="card-subtext">Cash on hand (all sites)</div>
+                    <div class="card-header"><span class="card-title">Total Cash Invested</span><i class="fa-solid fa-money-bill-wave" style="color: var(--success)"></i></div>
+                    <div class="card-value currency" id="globInv">₹0</div>
+                    <div class="card-subtext">Overall Investments</div>
                 </div>
-                <div class="card glass" style="border: 1px solid var(--orange);">
+                <div class="card glass">
                     <div class="card-header"><span class="card-title">Locked Receivables</span><i class="fa-solid fa-lock" style="color: var(--orange)"></i></div>
                     <div class="card-value currency highlight-orange" id="globLocked">₹0</div>
                     <div class="card-subtext">Unreleased EMD & RM</div>
                 </div>
                 <div class="card glass">
-                    <div class="card-header"><span class="card-title">Net Investments</span><i class="fa-solid fa-handshake" style="color: var(--accent-primary)"></i></div>
-                    <div class="card-value currency" id="globInv">₹0</div>
-                    <div class="card-subtext">Partner Investments</div>
+                    <div class="card-header"><span class="card-title">Total Available Site Cash</span><i class="fa-solid fa-wallet" style="color: var(--blue)"></i></div>
+                    <div class="card-value currency positive" id="globCash">₹0</div>
+                    <div class="card-subtext">Across All Sites</div>
                 </div>
             </div>
+            <div class="card glass" style="margin-bottom: 24px; border-left: 4px solid var(--warning);">
+                <div class="card-header"><span class="card-title">Action Items & Reminders</span><i class="fa-solid fa-bell" style="color: var(--warning)"></i></div>
+                <div id="pendingActionsList" style="display: flex; flex-direction: column; gap: 10px; max-height: 250px; overflow-y: auto;">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+            
+            <div class="card glass" style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--purple);">
+                <div>
+                    <h3 style="margin-bottom: 5px; color: var(--text-primary);"><i class="fa-solid fa-sitemap" style="color: var(--purple); margin-right: 10px;"></i> Visualize Your Enterprise</h3>
+                    <div style="color: var(--text-secondary); font-size: 14px;">Explore your full corporate structure, sites, partners, and vendors in the interactive Organization Hierarchy map.</div>
+                </div>
+                <button class="btn btn-primary" onclick="switchView('orgHierarchy');"><i class="fa-solid fa-project-diagram"></i> Open Canvas View</button>
+            </div>
+
+            <div class="card glass" style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--blue);">
+                <div>
+                    <h3 style="margin-bottom: 5px; color: var(--text-primary);"><i class="fa-regular fa-calendar-days" style="color: var(--blue); margin-right: 10px;"></i> Track Cash Flow Visually</h3>
+                    <div style="color: var(--text-secondary); font-size: 14px;">View all partner investments, vendor expenses, RA bills, and EMDs across a monthly calendar grid.</div>
+                </div>
+                <button class="btn btn-primary" onclick="switchView('calendar');"><i class="fa-regular fa-calendar-days"></i> Open Calendar View</button>
+            </div>
+            
             <div class="card glass" style="margin-bottom: 24px;">
                 <div class="flex-between">
                     <h3>Site Wise Breakdown</h3>
-                    <button class="btn btn-export" onclick="exportTableToCSV('tableGlob', 'Global_Dashboard')"><i class="fa-solid fa-file-excel"></i> Export</button>
+                    <button class="btn btn-export" onclick="exportTableToExcel('tableGlob', 'Global_Dashboard')"><i class="fa-solid fa-file-excel"></i> Export</button>
                 </div>
                 <div class="table-container">
                     <table id="tableGlob">
@@ -147,6 +294,32 @@
                         </thead>
                         <tbody id="globSiteTable"></tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calendar View -->
+        <div id="calendarView" class="view">
+            <div class="header"><h1>Financial Calendar</h1></div>
+            <div class="calendar-layout">
+                <div class="calendar-main card glass">
+                    <div class="calendar-header-bar">
+                        <button class="btn btn-primary" onclick="changeMonth(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+                        <h3 id="calMonthYear" style="margin:0;">October 2023</h3>
+                        <div>
+                            <button class="btn btn-export" onclick="goToToday()" style="margin-right: 10px;">Today</button>
+                            <button class="btn btn-primary" onclick="changeMonth(1)"><i class="fa-solid fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                    <div class="calendar-grid" id="calGrid">
+                        <!-- Rendered by JS -->
+                    </div>
+                </div>
+                <div class="calendar-details-sidebar glass" id="calDetailsSidebar">
+                    <h3 id="calSidebarDate" style="border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px;">Select a date</h3>
+                    <div id="calSidebarContent" style="display: flex; flex-direction: column; gap: 10px;">
+                        <div style="color: var(--text-secondary); font-style: italic;">Click a day on the calendar to see all financial entries for that date.</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -161,7 +334,7 @@
                         <div class="form-group"><label>Company Name</label><input type="text" id="companyName" class="form-control" required></div>
                         <div style="display:flex;gap:10px;"><button type="submit" class="btn btn-primary" id="btn_company">Save</button><button type="button" class="btn btn-danger" onclick="cancelEdit('company')" style="display:none;" id="cancel_company">Cancel</button></div>
                     </form>
-                    <div class="flex-between" style="margin-top:20px;"><h4>Companies</h4><button class="btn btn-export" onclick="exportTableToCSV('tableComp', 'Companies')"><i class="fa-solid fa-file-excel"></i> Export</button></div>
+                    <div class="flex-between" style="margin-top:20px;"><h4>Companies</h4><button class="btn btn-export" onclick="exportTableToExcel('tableComp', 'Companies', 'companies')"><i class="fa-solid fa-file-excel"></i> Export</button></div>
                     <div class="table-container"><table id="tableComp"><thead><tr><th>Company</th><th>Action</th></tr></thead><tbody id="compTableBody"></tbody></table></div>
                 </div>
                 <div class="card glass">
@@ -172,7 +345,7 @@
                         <div class="form-group"><label>Department Name of Site</label><input type="text" id="managerName" class="form-control" required></div>
                         <div style="display:flex;gap:10px;"><button type="submit" class="btn btn-primary" id="btn_site">Save</button><button type="button" class="btn btn-danger" onclick="cancelEdit('site')" style="display:none;" id="cancel_site">Cancel</button></div>
                     </form>
-                    <div class="flex-between" style="margin-top:20px;"><h4>Sites</h4><button class="btn btn-export" onclick="exportTableToCSV('tableSite', 'Sites')"><i class="fa-solid fa-file-excel"></i> Export</button></div>
+                    <div class="flex-between" style="margin-top:20px;"><h4>Sites</h4><button class="btn btn-export" onclick="exportTableToExcel('tableSite', 'Sites', 'sites')"><i class="fa-solid fa-file-excel"></i> Export</button></div>
                     <div class="table-container"><table id="tableSite"><thead><tr><th>Company</th><th>Site</th><th>Department</th><th>Action</th></tr></thead><tbody id="sitesTableBody"></tbody></table></div>
                 </div>
             </div>
@@ -202,7 +375,7 @@
                         </form>
                     </div>
                     <div class="card glass">
-                        <div class="flex-between"><h4>Corporate Expense Log</h4><button class="btn btn-export" onclick="exportTableToCSV('tableCorp', 'Corp_Expenses')"><i class="fa-solid fa-file-excel"></i> Export</button></div>
+                        <div class="flex-between"><h4>Corporate Expense Log</h4><button class="btn btn-export" onclick="exportTableToExcel('tableCorp', 'Corp_Expenses', 'corpExpenses')"><i class="fa-solid fa-file-excel"></i> Export</button></div>
                         <div class="table-container"><table id="tableCorp"><thead><tr><th>Date</th><th>Desc</th><th>Payment Type</th><th>Amount</th><th>Action</th></tr></thead><tbody id="cExpTableBody"></tbody></table></div>
                     </div>
                 </div>
@@ -236,7 +409,11 @@
                                 <h3 id="formTitle_partnerTx" style="margin-bottom: 15px;">Add Transaction</h3>
                                 <form id="partnerTxForm">
                                     <div class="form-row"><div class="form-group"><label>Date</label><input type="date" id="ptDate" class="form-control" required></div><div class="form-group"><label>Payment Type</label><select id="ptPayType" class="form-control" required><option value="Account">Account</option><option value="Cash">Cash</option></select></div></div>
-                                    <div class="form-group"><label>Partner Name</label><input type="text" id="ptName" class="form-control" required></div>
+                                    <div class="form-group autocomplete-wrapper">
+                                        <label>Partner Name</label>
+                                        <input type="text" id="ptName" class="form-control" required autocomplete="off">
+                                        <div id="partnerAutocompleteList" class="autocomplete-items" style="display:none;"></div>
+                                    </div>
                                     <div class="form-group"><label>Description / Details</label><input type="text" id="ptDesc" class="form-control" required></div>
                                     <div class="form-group"><label>Type</label><select id="ptType" class="form-control" required><option value="invest">Invest</option><option value="withdraw">Withdraw</option></select></div>
                                     <div class="form-group"><label>Amount (₹)</label><input type="text" id="ptAmount" class="form-control amt-input" required placeholder="0.00"></div>
@@ -244,7 +421,7 @@
                                 </form>
                             </div>
                             <div>
-                                <div class="flex-between"><h4>Transactions</h4><button class="btn btn-export" onclick="exportTableToCSV('tablePt', 'Partner_Transactions')"><i class="fa-solid fa-file-excel"></i> Export</button></div>
+                                <div class="flex-between"><h4>Transactions</h4><button class="btn btn-export" onclick="exportTableToExcel('tablePt', 'Partner_Transactions', 'partnerTx')"><i class="fa-solid fa-file-excel"></i> Export</button></div>
                                 <div class="table-container"><table id="tablePt"><thead><tr><th>Date</th><th>Partner</th><th>Desc</th><th>Type</th><th>Pay Type</th><th>Amount</th><th>Action</th></tr></thead><tbody id="ptTableBody"></tbody></table></div>
                             </div>
                         </div>
@@ -255,28 +432,26 @@
                         <div class="two-col">
                             <div>
                                 <h3 id="formTitle_expenses" style="margin-bottom: 15px;">Add Vendor Ledger Entry</h3>
-                                <form id="expenseForm">
-                                    <div class="form-row"><div class="form-group"><label>Date</label><input type="date" id="expDate" class="form-control" required></div><div class="form-group"><label>Payment Type</label><select id="expPayType" class="form-control" required><option value="Account">Account</option><option value="Cash">Cash</option></select></div></div>
-                                    <div class="form-group"><label>Vendor Name</label><input type="text" id="expVendor" class="form-control" required></div>
-                                    
-                                    <div class="form-group"><label>Transaction Type</label>
-                                        <select id="expTxType" class="form-control" required>
-                                            <option value="bill">Purchase Bill / Expense Incurred</option>
-                                            <option value="pay_given">Payment Given to Vendor</option>
-                                            <option value="pay_received">Payment Received from Vendor</option>
-                                        </select>
+                                <form id="expenseForm" class="biz-form">
+                                    <div class="form-group"><label>Date</label><input type="date" id="expDate" class="form-control" required></div>
+                                    <div class="form-group autocomplete-wrapper">
+                                        <label>Vendor Name</label>
+                                        <input type="text" id="expVendor" class="form-control" required autocomplete="off">
+                                        <div id="vendorAutocompleteList" class="autocomplete-items" style="display:none;"></div>
                                     </div>
-
+                                    <div class="form-group"><label>Transaction Type</label><select id="expTxType" class="form-control" required><option value="bill">Vendor Bill (Inward)</option><option value="pay_given">Payment Given to Vendor</option><option value="advance_given">Advance Given to Vendor</option><option value="pay_received">Payment Received from Vendor (Refund)</option></select></div>
+                                    <div class="form-group"><label>Payment Type</label><select id="expPayType" class="form-control" required><option value="Bank Transfer">Bank Transfer</option><option value="Check">Check</option><option value="Cash">Cash</option><option value="N/A">N/A (For Bills)</option></select></div>
                                     <div class="form-group"><label>Description</label><input type="text" id="expDesc" class="form-control" required></div>
-                                    <div class="form-group"><label>Amount (₹)</label><input type="text" id="expAmount" class="form-control amt-input" required placeholder="0.00"></div>
-                                    <div style="display:flex;gap:10px;"><button type="submit" class="btn btn-primary" id="btn_expenses">Save</button><button type="button" class="btn btn-danger" onclick="cancelEdit('expenses')" style="display:none;" id="cancel_expenses">Cancel</button></div>
+                                    <div class="form-group"><label>Amount</label><input type="text" id="expAmount" class="form-control amt-input" required placeholder="0.00"></div>
+                                    <div class="form-group"><label>TDS Deducted (If Bill)</label><input type="text" id="expTds" class="form-control amt-input" placeholder="0.00" value="0"></div>
+                                    <div style="display:flex;gap:10px;"><button type="submit" class="btn btn-primary" id="btn_expenses">Save Transaction</button><button type="button" class="btn btn-danger" onclick="cancelEdit('expenses')" style="display:none;" id="cancel_expenses">Cancel</button></div>
                                 </form>
                             </div>
                             <div>
-                                <div class="flex-between"><h4>Vendor Ledger Entries</h4><button class="btn btn-export" onclick="exportTableToCSV('tableExp', 'Site_Expenses')"><i class="fa-solid fa-file-excel"></i> Export</button></div>
+                                <div class="flex-between"><h4>Vendor Ledger Entries</h4><button class="btn btn-export" onclick="exportTableToExcel('tableExp', 'Site_Expenses', 'expenses')"><i class="fa-solid fa-file-excel"></i> Export</button></div>
                                 <div class="table-container" style="max-height: 250px;"><table id="tableExp"><thead><tr><th>Date</th><th>Vendor</th><th>Type</th><th>Desc</th><th>Amount</th><th>Action</th></tr></thead><tbody id="expTableBody"></tbody></table></div>
 
-                                <div class="flex-between" style="margin-top: 20px;"><h4>Vendor Balances</h4><button class="btn btn-export" onclick="exportTableToCSV('tableBal', 'Vendor_Balances')"><i class="fa-solid fa-file-excel"></i> Export</button></div>
+                                <div class="flex-between" style="margin-top: 20px;"><h4>Vendor Balances</h4><button class="btn btn-export" onclick="exportTableToExcel('tableBal', 'Vendor_Balances')"><i class="fa-solid fa-file-excel"></i> Export</button></div>
                                 <div class="table-container" style="max-height: 200px;">
                                     <table id="tableBal">
                                         <thead><tr><th>Vendor Name</th><th>Total Billed</th><th>Total Paid Out</th><th>Current Owe Status</th></tr></thead>
@@ -291,16 +466,18 @@
                         <div class="two-col">
                             <div>
                                 <h3 id="formTitle_emd" style="margin-bottom: 15px;">Record EMD (Security Deposit)</h3>
-                                <form id="emdForm">
-                                    <div class="form-row"><div class="form-group"><label>Date</label><input type="date" id="emdDate" class="form-control" required></div><div class="form-group"><label>Payment</label><select id="emdPayType" class="form-control" required><option value="Account">Account</option><option value="Cash">Cash</option></select></div></div>
-                                    <div class="form-group"><label>Reference / Tender</label><input type="text" id="emdDesc" class="form-control" required></div>
-                                    <div class="form-group"><label>Amount (₹)</label><input type="text" id="emdAmount" class="form-control amt-input" required placeholder="0.00"></div>
-                                    <div class="form-group"><label>Release Date (Blank if locked)</label><input type="date" id="emdReleaseDate" class="form-control"></div>
-                                    <div style="display:flex;gap:10px;"><button type="submit" class="btn btn-primary" id="btn_emd">Save</button><button type="button" class="btn btn-danger" onclick="cancelEdit('emd')" style="display:none;" id="cancel_emd">Cancel</button></div>
+                                <form id="emdForm" class="biz-form">
+                                    <div class="form-group"><label>Date</label><input type="date" id="emdDate" class="form-control" required></div>
+                                    <div class="form-group"><label>Reference/Description</label><input type="text" id="emdDesc" class="form-control" required></div>
+                                    <div class="form-group"><label>Payment Type</label><select id="emdPayType" class="form-control" required><option value="Bank Transfer">Bank Transfer</option><option value="Check">Check</option><option value="Cash">Cash</option></select></div>
+                                    <div class="form-group"><label>Amount</label><input type="text" id="emdAmount" class="form-control amt-input" required placeholder="0.00"></div>
+                                    <div class="form-group"><label>Status</label><select id="emdStatus" class="form-control" required><option value="Pending">Pending (Locked)</option><option value="Converted">Converted to PG/ISD (Locked)</option><option value="Refunded">Refunded (Released)</option><option value="Forfeited">Forfeited (Expense)</option></select></div>
+                                    <div class="form-group"><label>Release Date (If Applicable)</label><input type="date" id="emdReleaseDate" class="form-control"></div>
+                                    <div style="display:flex;gap:10px;"><button type="submit" class="btn btn-primary" id="btn_emd">Save EMD</button><button type="button" class="btn btn-danger" onclick="cancelEdit('emd')" style="display:none;" id="cancel_emd">Cancel</button></div>
                                 </form>
                             </div>
                             <div>
-                                <div class="flex-between"><h4>EMD Records</h4><button class="btn btn-export" onclick="exportTableToCSV('tableEmd', 'EMD_Records')"><i class="fa-solid fa-file-excel"></i> Export</button></div>
+                                <div class="flex-between"><h4>EMD Records</h4><button class="btn btn-export" onclick="exportTableToExcel('tableEmd', 'EMD_Records', 'emd')"><i class="fa-solid fa-file-excel"></i> Export</button></div>
                                 <div class="table-container"><table id="tableEmd"><thead><tr><th>Date</th><th>Ref</th><th>Pay Type</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead><tbody id="emdTableBody"></tbody></table></div>
                             </div>
                         </div>
@@ -310,24 +487,23 @@
                         <div class="two-col">
                             <div>
                                 <h3 id="formTitle_bills" style="margin-bottom: 15px;">Running Account (RA) Bill</h3>
-                                <form id="billForm">
-                                    <div class="form-row"><div class="form-group"><label>Date</label><input type="date" id="billDate" class="form-control" required></div><div class="form-group"><label>Payment</label><select id="billPayType" class="form-control" required><option value="Account">Account</option><option value="Cash">Cash</option></select></div></div>
-                                    <div class="form-group"><label>Bill Reference</label><input type="text" id="billDesc" class="form-control" required></div>
-                                    <div class="form-row">
-                                        <div class="form-group"><label>Gross Amount</label><input type="text" id="billGross" class="form-control amt-input" required></div>
-                                        <div class="form-group"><label>RM Held (Locked)</label><input type="text" id="billRM" class="form-control amt-input" required></div>
-                                    </div>
-                                    <div class="form-row">
-                                        <div class="form-group"><label>Other Deductions (Lost)</label><input type="text" id="billDed" class="form-control amt-input" required></div>
-                                        <div class="form-group"><label>Allocated to Site (₹)</label><input type="text" id="billAlloc" class="form-control amt-input" required></div>
-                                    </div>
-                                    <div class="form-group"><label>RM Release Date (Blank if locked)</label><input type="date" id="billRmRelease" class="form-control"></div>
-                                    <div style="display:flex;gap:10px;"><button type="submit" class="btn btn-primary" id="btn_bills">Save</button><button type="button" class="btn btn-danger" onclick="cancelEdit('bills')" style="display:none;" id="cancel_bills">Cancel</button></div>
+                                <form id="billForm" class="biz-form">
+                                    <div class="form-group"><label>Date</label><input type="date" id="billDate" class="form-control" required></div>
+                                    <div class="form-group"><label>Reference/Description</label><input type="text" id="billDesc" class="form-control" required></div>
+                                    <div class="form-group"><label>Payment Type</label><select id="billPayType" class="form-control" required><option value="Bank Transfer">Bank Transfer</option><option value="Check">Check</option><option value="Cash">Cash</option></select></div>
+                                    <div class="form-group"><label>Gross Amount</label><input type="text" id="billGross" class="form-control amt-input" required placeholder="0.00"></div>
+                                    <div class="form-group"><label>RM Deduction (Retention)</label><input type="text" id="billRM" class="form-control amt-input" required placeholder="0.00" value="0"></div>
+                                    <div class="form-group"><label>TDS & Tax Deductions</label><input type="text" id="billTds" class="form-control amt-input" required placeholder="0.00" value="0"></div>
+                                    <div class="form-group"><label>Mobilization Advance Recovery</label><input type="text" id="billAdvRec" class="form-control amt-input" required placeholder="0.00" value="0"></div>
+                                    <div class="form-group"><label>Other Penalty/Deductions</label><input type="text" id="billDed" class="form-control amt-input" required placeholder="0.00" value="0"></div>
+                                    <div class="form-group"><label>Allocated to Site Cash (From Net)</label><input type="text" id="billAlloc" class="form-control amt-input" required placeholder="0.00"></div>
+                                    <div class="form-group"><label>RM Release Date</label><input type="date" id="billRmRelease" class="form-control"></div>
+                                    <div style="display:flex;gap:10px;"><button type="submit" class="btn btn-primary" id="btn_bills">Save RA Bill</button><button type="button" class="btn btn-danger" onclick="cancelEdit('bills')" style="display:none;" id="cancel_bills">Cancel</button></div>
                                 </form>
                             </div>
                             <div>
-                                <div class="flex-between"><h4>RA Bills</h4><button class="btn btn-export" onclick="exportTableToCSV('tableBill', 'RA_Bills')"><i class="fa-solid fa-file-excel"></i> Export</button></div>
-                                <div class="table-container"><table id="tableBill"><thead><tr><th>Date</th><th>Ref</th><th>Net Rcvd</th><th>Alloc to Site</th><th>Retained by Corp</th><th>Status</th><th>Action</th></tr></thead><tbody id="billTableBody"></tbody></table></div>
+                                <div class="flex-between"><h4>RA Bills</h4><button class="btn btn-export" onclick="exportTableToExcel('tableBill', 'RA_Bills', 'bills')"><i class="fa-solid fa-file-excel"></i> Export</button></div>
+                                <div class="table-container"><table id="tableBill"><thead><tr><th>Date</th><th>Ref</th><th>Gross</th><th>RM (Ret)</th><th>Net Rcvd</th><th>Alloc to Site</th><th>Corp Retained</th><th>RM Status</th><th>Action</th></tr></thead><tbody id="billTableBody"></tbody></table></div>
                             </div>
                         </div>
                     </div>
@@ -335,29 +511,139 @@
             </div>
             <div id="noSiteMsg" style="text-align: center; padding: 50px; color: var(--text-secondary);"><h2>Please select a site</h2></div>
         </div>
+
+        <!-- Organization Hierarchy View -->
+        <div id="orgHierarchyView" class="view">
+            <div class="header">
+                <h1>Organization Hierarchy</h1>
+                <div class="view-toggle">
+                    <button class="btn btn-primary" id="btnListView" onclick="switchOrgView('list')"><i class="fa-solid fa-list"></i> List View</button>
+                    <button class="btn btn-primary active" id="btnCanvasView" onclick="switchOrgView('canvas')"><i class="fa-solid fa-project-diagram"></i> Canvas View</button>
+                </div>
+            </div>
+            
+            <div id="orgListContainer" class="list-container"></div>
+            <div id="orgCanvasContainer" class="canvas-container active"></div>
+        </div>
+
+        <!-- Audit Logs View -->
+        <div id="auditLogsView" class="view">
+            <div class="header"><h1>Audit Logs & Transaction History</h1></div>
+            <div class="card glass">
+                <div class="flex-between" style="margin-bottom: 20px;">
+                    <div><h3 style="margin: 0; color: var(--text-primary);">System Activity</h3><div style="font-size:13px; color:var(--text-secondary);">Tracking all creates, edits, and deletes.</div></div>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="audit-table">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>User</th>
+                                <th>Action</th>
+                                <th>Category</th>
+                                <th>Record Title</th>
+                                <th>Details / Changes</th>
+                                <th>Snapshot</th>
+                            </tr>
+                        </thead>
+                        <tbody id="auditTableBody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
-        let appData = { companies: [], sites: [], partnerTx: [], expenses: [], emd: [], bills: [], corpExpenses: [] };
+        let appData = { companies: [], sites: [], partnerTx: [], expenses: [], emd: [], bills: [], corpExpenses: [], auditLogs: [] };
         let editState = { col: null, id: null };
         const STORAGE_KEY = 'bizflow_data_v6';
 
         function initApp() {
             const savedData = localStorage.getItem(STORAGE_KEY);
-            if (savedData) appData = JSON.parse(savedData);
-            setupInputFormatting(); updateDropdowns(); renderSetupTables(); renderGlobalDashboard(); refreshSiteDashboard(); refreshCompanyDashboard();
+            if (savedData) {
+                try {
+                    const parsed = JSON.parse(savedData);
+                    appData = { ...appData, ...parsed };
+                    ['companies', 'sites', 'partnerTx', 'expenses', 'emd', 'bills', 'corpExpenses', 'auditLogs'].forEach(k => {
+                        if(!appData[k]) appData[k] = [];
+                    });
+                } catch(e) { console.error("Error parsing savedData:", e); }
+            }
+            setupInputFormatting(); updateDropdowns(); renderSetupTables(); renderGlobalDashboard(); refreshSiteDashboard(); refreshCompanyDashboard(); renderOrgHierarchy(); renderCalendar();
             setToday();
+            
+            setupAutocomplete('ptName', 'partnerAutocompleteList', () => [...new Set(appData.partnerTx.map(x => x.name).filter(Boolean))]);
+            setupAutocomplete('expVendor', 'vendorAutocompleteList', () => [...new Set(appData.expenses.map(x => x.vendor).filter(Boolean))]);
         }
+        
+        function setupAutocomplete(inputId, listId, dataGetter) {
+            const inp = document.getElementById(inputId);
+            const list = document.getElementById(listId);
+            
+            inp.addEventListener("input", function(e) {
+                let val = this.value;
+                list.innerHTML = "";
+                if (!val) { list.style.display = 'none'; return false; }
+                
+                const data = dataGetter();
+                const matches = data.filter(item => item.toLowerCase().includes(val.toLowerCase()));
+                if(matches.length > 0) list.style.display = 'block';
+                else list.style.display = 'none';
+                
+                matches.forEach(match => {
+                    let div = document.createElement("DIV");
+                    div.innerHTML = match;
+                    div.addEventListener("click", function(e) {
+                        inp.value = match;
+                        list.style.display = 'none';
+                    });
+                    list.appendChild(div);
+                });
+            });
+
+            document.addEventListener("click", function (e) {
+                if (e.target !== inp) { list.style.display = 'none'; }
+            });
+        }
+        
         function setToday() {
             const today = new Date().toISOString().split('T')[0];
             document.querySelectorAll('input[type="date"]').forEach(el => { if(!el.id.includes('Release')) el.value = today; });
         }
 
-        function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(appData)); updateDropdowns(); renderSetupTables(); renderGlobalDashboard(); refreshSiteDashboard(); refreshCompanyDashboard(); }
+        function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(appData)); updateDropdowns(); renderSetupTables(); renderGlobalDashboard(); refreshSiteDashboard(); refreshCompanyDashboard(); renderOrgHierarchy(); renderCalendar(); }
         function resetApp() { if(confirm("Are you sure?")) { localStorage.removeItem(STORAGE_KEY); location.reload(); } }
+
+        function logAudit(action, category, title, oldObj, newObj) {
+            const entry = { id: generateId(), timestamp: new Date().toISOString(), user: 'Local User', action, category, title, changes: [], oldData: oldObj, newData: newObj };
+            if(oldObj && newObj) {
+                Object.keys(newObj).forEach(k => {
+                    if(k === 'id') return;
+                    if(oldObj[k] != newObj[k]) entry.changes.push({ field: k, oldVal: oldObj[k], newVal: newObj[k] });
+                });
+            } else if (newObj) {
+                Object.keys(newObj).forEach(k => {
+                    if(k === 'id') return;
+                    entry.changes.push({ field: k, oldVal: null, newVal: newObj[k] });
+                });
+            } else if (oldObj) {
+                entry.changes.push({ field: 'Deleted', oldVal: 'Exists', newVal: 'Deleted' });
+            }
+            if(entry.changes.length > 0 || action === 'Deleted') {
+                appData.auditLogs.unshift(entry);
+                if(appData.auditLogs.length > 1000) appData.auditLogs.pop();
+            }
+        }
 
         function deleteEntry(col, id) {
             if(confirm("Delete this entry?")) {
+                const oldObj = appData[col].find(x => x.id === id);
+                if(oldObj) {
+                    const title = oldObj.name || oldObj.location || oldObj.desc || oldObj.vendor || col;
+                    logAudit('Deleted', col, title, oldObj, null);
+                }
                 appData[col] = appData[col].filter(x => x.id !== id);
                 if(col === 'companies') appData.sites = appData.sites.filter(s => s.companyId !== id);
                 saveData();
@@ -391,7 +677,7 @@
             if(col === 'partnerTx') { document.getElementById('ptDate').value = obj.date; document.getElementById('ptPayType').value = obj.payType; document.getElementById('ptName').value = obj.name; document.getElementById('ptDesc').value = obj.desc || ''; document.getElementById('ptType').value = obj.type; document.getElementById('ptAmount').value = formatNum(obj.amount); }
             if(col === 'expenses') { document.getElementById('expDate').value = obj.date; document.getElementById('expPayType').value = obj.payType; document.getElementById('expVendor').value = obj.vendor || ''; document.getElementById('expTxType').value = obj.txType || 'bill'; document.getElementById('expDesc').value = obj.desc; document.getElementById('expAmount').value = formatNum(obj.amount); }
             if(col === 'emd') { document.getElementById('emdDate').value = obj.date; document.getElementById('emdPayType').value = obj.payType; document.getElementById('emdDesc').value = obj.desc; document.getElementById('emdAmount').value = formatNum(obj.amount); document.getElementById('emdReleaseDate').value = obj.releaseDate || ''; }
-            if(col === 'bills') { document.getElementById('billDate').value = obj.date; document.getElementById('billPayType').value = obj.payType; document.getElementById('billDesc').value = obj.desc; document.getElementById('billGross').value = formatNum(obj.gross); document.getElementById('billRM').value = formatNum(obj.rm); document.getElementById('billDed').value = formatNum(obj.ded); document.getElementById('billAlloc').value = formatNum(obj.alloc); document.getElementById('billRmRelease').value = obj.rmReleaseDate || ''; }
+            if(col === 'bills') { document.getElementById('billDate').value = obj.date; document.getElementById('billPayType').value = obj.payType; document.getElementById('billDesc').value = obj.desc; document.getElementById('billGross').value = formatNum(obj.gross); document.getElementById('billRM').value = formatNum(obj.rm); document.getElementById('billTds').value = formatNum(obj.tds || 0); document.getElementById('billAdvRec').value = formatNum(obj.advRec || 0); document.getElementById('billDed').value = formatNum(obj.ded); document.getElementById('billAlloc').value = formatNum(obj.alloc); document.getElementById('billRmRelease').value = obj.rmReleaseDate || ''; }
             if(col === 'corpExpenses') { document.getElementById('cExpDate').value = obj.date; document.getElementById('cExpPayType').value = obj.payType; document.getElementById('cExpDesc').value = obj.desc; document.getElementById('cExpAmount').value = formatNum(obj.amount); }
         }
 
@@ -402,15 +688,45 @@
 
         function saveOrUpdate(col, newObj) {
             const actualCol = col === 'company' ? 'companies' : col === 'site' ? 'sites' : col;
+            let action = 'Created', oldObj = null, title = newObj.name || newObj.location || newObj.desc || newObj.vendor || actualCol;
+            let finalObj = null;
+            
             if(editState.id && editState.col === col) {
                 const idx = appData[actualCol].findIndex(x => x.id === editState.id);
-                if(idx !== -1) appData[actualCol][idx] = { ...newObj, id: editState.id };
+                if(idx !== -1) {
+                    oldObj = { ...appData[actualCol][idx] };
+                    title = oldObj.name || oldObj.location || oldObj.desc || oldObj.vendor || actualCol;
+                    appData[actualCol][idx] = { ...newObj, id: editState.id };
+                    finalObj = appData[actualCol][idx];
+                    action = 'Edited';
+                }
                 cancelEdit(col);
             } else {
                 newObj.id = generateId();
                 appData[actualCol].push(newObj);
+                finalObj = newObj;
             }
+            logAudit(action, actualCol, title, oldObj, finalObj);
             saveData();
+        }
+
+        function updateRecordStatus(col, id, val) {
+            const arr = appData[col];
+            const item = arr.find(x => x.id === id);
+            if(item) {
+                const oldObj = { ...item };
+                if(col === 'emd') item.status = val;
+                else if(col === 'bills') {
+                    if(val === 'Released') item.rmReleaseDate = new Date().toISOString().split('T')[0];
+                    else item.rmReleaseDate = '';
+                }
+                else if(col === 'partnerTx') item.type = val;
+                else if(col === 'expenses') item.txType = val;
+                
+                const title = item.name || item.desc || item.vendor || col;
+                logAudit('Status Update', col, title, oldObj, item);
+                saveData();
+            }
         }
 
         function generateId() { return Math.random().toString(36).substr(2, 9); }
@@ -430,32 +746,273 @@
             document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             document.getElementById(viewId + 'View').classList.add('active');
-            event.currentTarget.classList.add('active');
+            if (window.event && event.currentTarget && event.currentTarget.classList) event.currentTarget.classList.add('active');
+            else document.querySelectorAll('.nav-item').forEach(el => { if(el.getAttribute('onclick') && el.getAttribute('onclick').includes(viewId)) el.classList.add('active'); });
+            
+            if(viewId === 'auditLogs') renderAuditLogs();
         }
+
+        function renderAuditLogs() {
+            const tbody = document.getElementById('auditTableBody');
+            if(!appData.auditLogs || appData.auditLogs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-secondary);">No audit logs found.</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = appData.auditLogs.map(log => {
+                const timeStr = new Date(log.timestamp).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                
+                let badgeClass = 'badge-partner';
+                if(log.action === 'Deleted') badgeClass = 'badge-danger';
+                if(log.action === 'Edited') badgeClass = 'badge-vendor';
+                if(log.action === 'Created') badgeClass = 'badge-success';
+                
+                let changesHtml = '';
+                if(log.changes && log.changes.length > 0) {
+                    changesHtml = '<ul class="audit-change-list">';
+                    log.changes.forEach(c => {
+                        const lbl = c.field.charAt(0).toUpperCase() + c.field.slice(1);
+                        if(c.field === 'Deleted') changesHtml += `<li>Entry was permanently deleted.</li>`;
+                        else changesHtml += `<li><strong>${lbl}:</strong> <span class="val-old">${c.oldVal===null||c.oldVal===''?'(empty)':c.oldVal}</span> &rarr; <span class="val-new">${c.newVal===null||c.newVal===''?'(empty)':c.newVal}</span></li>`;
+                    });
+                    changesHtml += '</ul>';
+                }
+                
+                return `<tr>
+                    <td style="white-space: nowrap; color: var(--text-secondary);">${timeStr}</td>
+                    <td><i class="fa-solid fa-user-circle" style="color:var(--text-secondary); margin-right:5px;"></i> ${log.user}</td>
+                    <td><span class="cal-badge ${badgeClass}" style="padding: 4px 8px;">${log.action}</span></td>
+                    <td style="text-transform: capitalize;">${log.category}</td>
+                    <td><strong>${log.title || '-'}</strong></td>
+                    <td>${changesHtml}</td>
+                    <td>
+                        <button class="btn btn-primary" style="padding: 4px 8px; font-size: 12px; margin-bottom: 5px;" onclick="showAuditModal('${log.id}')">Full Snapshot</button>
+                        ${log.action !== 'Deleted' ? `<br><button class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px; background: rgba(255,255,255,0.1);" onclick="viewRecordFromAudit('${log.id}')">Go to Record</button>` : ''}
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        function showAuditModal(id) {
+            const log = appData.auditLogs.find(x => x.id === id);
+            if(!log) return;
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); z-index:9999; display:flex; justify-content:center; align-items:center;';
+            
+            const box = document.createElement('div');
+            box.className = 'card glass';
+            box.style.cssText = 'width: 90%; max-width: 800px; max-height: 85vh; overflow-y: auto;';
+            
+            const renderTable = (obj, isNew) => {
+                if(!obj) return '<div style="color:var(--text-secondary); font-style:italic; padding: 10px;">None</div>';
+                let html = '<table style="width:100%; border-collapse: collapse; text-align: left; font-size: 13px;">';
+                html += '<tr><th style="padding:8px; border-bottom:1px solid rgba(255,255,255,0.1); width:40%;">Field</th><th style="padding:8px; border-bottom:1px solid rgba(255,255,255,0.1);">Value</th></tr>';
+                const cMap = {};
+                if(log.changes) log.changes.forEach(c => cMap[c.field] = true);
+                
+                Object.keys(obj).forEach(k => {
+                    if(k === 'id' || k === 'siteId' || k === 'companyId' || k === 'compId') return;
+                    const changed = cMap[k];
+                    const bg = changed ? (isNew ? 'background: rgba(16, 185, 129, 0.2);' : 'background: rgba(239, 68, 68, 0.2);') : '';
+                    let val = obj[k] === '' || obj[k] === null ? '-' : obj[k];
+                    html += `<tr style="${bg} border-bottom:1px solid rgba(255,255,255,0.05);"><td style="padding:8px; font-weight:bold; color:var(--text-secondary); text-transform:capitalize;">${k}</td><td style="padding:8px;">${val}</td></tr>`;
+                });
+                return html + '</table>';
+            };
+
+            box.innerHTML = `
+                <div class="flex-between" style="margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+                    <h3 style="margin:0;">Audit Snapshot: ${log.title || log.category}</h3>
+                    <button class="btn btn-danger" onclick="this.closest('.card').parentElement.remove()">Close</button>
+                </div>
+                <div style="display:flex; gap: 20px;">
+                    <div style="flex:1; background:rgba(0,0,0,0.2); border-radius:8px; border: 1px solid var(--border-color); overflow: hidden;">
+                        <h4 style="color:var(--danger); margin: 0; padding: 12px; border-bottom: 1px solid var(--border-color); background: rgba(239, 68, 68, 0.1);">Previous State</h4>
+                        ${renderTable(log.oldData, false)}
+                    </div>
+                    <div style="flex:1; background:rgba(0,0,0,0.2); border-radius:8px; border: 1px solid var(--border-color); overflow: hidden;">
+                        <h4 style="color:var(--success); margin: 0; padding: 12px; border-bottom: 1px solid var(--border-color); background: rgba(16, 185, 129, 0.1);">New State</h4>
+                        ${renderTable(log.newData, true)}
+                    </div>
+                </div>
+            `;
+            modal.appendChild(box);
+            document.body.appendChild(modal);
+        }
+
+        function viewRecordFromAudit(logId) {
+            const log = appData.auditLogs.find(x => x.id === logId);
+            if(!log || !log.newData) return;
+            
+            const cat = log.category;
+            const obj = log.newData;
+            
+            if(cat === 'companies') {
+                document.getElementById('activeCompanySelect').value = obj.id;
+                switchView('companyDashboard');
+                refreshCompanyDashboard();
+                editEntry('company', obj.id);
+            } else if (cat === 'sites') {
+                document.getElementById('activeSiteSelect').value = obj.id;
+                switchView('siteDashboard');
+                refreshSiteDashboard();
+                editEntry('site', obj.id);
+            } else if (cat === 'corpExpenses') {
+                document.getElementById('activeCompanySelect').value = obj.compId;
+                switchView('companyDashboard');
+                refreshCompanyDashboard();
+                editEntry('corpExpenses', obj.id);
+            } else {
+                // partnerTx, expenses, bills, emd
+                if(obj.siteId) {
+                    document.getElementById('activeSiteSelect').value = obj.siteId;
+                    switchView('siteDashboard');
+                    refreshSiteDashboard();
+                    
+                    // switch to correct tab
+                    if(cat === 'partnerTx') switchSiteTab('partner');
+                    if(cat === 'expenses') switchSiteTab('expenses');
+                    if(cat === 'bills') switchSiteTab('rabills');
+                    if(cat === 'emd') switchSiteTab('emd');
+                    
+                    highlightRow(obj.id);
+                    editEntry(cat, obj.id);
+                }
+            }
+        }
+
+        function showRecordHistory(id) {
+            const logs = appData.auditLogs.filter(x => (x.newData && x.newData.id === id) || (x.oldData && x.oldData.id === id));
+            
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); z-index:9999; display:flex; justify-content:center; align-items:center;';
+            
+            const box = document.createElement('div');
+            box.className = 'card glass';
+            box.style.cssText = 'width: 90%; max-width: 800px; max-height: 85vh; overflow-y: auto;';
+            
+            let tbody = '<tr><td colspan="4" style="text-align:center; color: var(--text-secondary);">No history found for this record.</td></tr>';
+            if(logs.length > 0) {
+                tbody = logs.map(log => {
+                    const timeStr = new Date(log.timestamp).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                    let badgeClass = 'badge-partner';
+                    if(log.action === 'Deleted') badgeClass = 'badge-danger';
+                    if(log.action === 'Edited') badgeClass = 'badge-vendor';
+                    if(log.action === 'Created') badgeClass = 'badge-success';
+                    
+                    let changesHtml = '';
+                    if(log.changes && log.changes.length > 0) {
+                        changesHtml = '<ul class="audit-change-list" style="margin:0;">';
+                        log.changes.forEach(c => {
+                            const lbl = c.field.charAt(0).toUpperCase() + c.field.slice(1);
+                            if(c.field === 'Deleted') changesHtml += `<li>Entry deleted.</li>`;
+                            else changesHtml += `<li><strong>${lbl}:</strong> <span class="val-old">${c.oldVal===null||c.oldVal===''?'(empty)':c.oldVal}</span> &rarr; <span class="val-new">${c.newVal===null||c.newVal===''?'(empty)':c.newVal}</span></li>`;
+                        });
+                        changesHtml += '</ul>';
+                    }
+                    return `<tr>
+                        <td style="color:var(--text-secondary); white-space:nowrap;">${timeStr}</td>
+                        <td>${log.user}</td>
+                        <td><span class="cal-badge ${badgeClass}">${log.action}</span></td>
+                        <td>${changesHtml}</td>
+                        <td><button class="btn btn-primary" style="padding: 4px 8px; font-size: 12px;" onclick="showAuditModal('${log.id}')">Full Snapshot</button></td>
+                    </tr>`;
+                }).join('');
+            }
+            
+            box.innerHTML = `
+                <div class="flex-between" style="margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+                    <h3 style="margin:0;">Record History</h3>
+                    <button class="btn btn-danger" onclick="this.closest('.card').parentElement.remove()">Close</button>
+                </div>
+                <table class="audit-table">
+                    <thead><tr><th>Time</th><th>User</th><th>Action</th><th>Changes</th><th>Snapshot</th></tr></thead>
+                    <tbody>${tbody}</tbody>
+                </table>
+            `;
+            modal.appendChild(box);
+            document.body.appendChild(modal);
+        }
+
         function switchSiteTab(tabId) {
             document.querySelectorAll('.site-tab').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.site-tab-content').forEach(el => el.classList.remove('active'));
-            event.currentTarget.classList.add('active');
+            if (window.event && event.currentTarget && event.currentTarget.classList && event.currentTarget.classList.contains('site-tab')) event.currentTarget.classList.add('active');
+            else document.querySelectorAll('.site-tab').forEach(el => { if(el.getAttribute('onclick') && el.getAttribute('onclick').includes(tabId)) el.classList.add('active'); });
             document.getElementById('tab-' + tabId).classList.add('active');
         }
 
-        // CSV Export
-        function exportTableToCSV(tableId, filename) {
-            const table = document.getElementById(tableId);
-            let csv = [];
-            for (let i = 0; i < table.rows.length; i++) {
-                let row = [], cols = table.rows[i].querySelectorAll("td, th");
-                for (let j = 0; j < cols.length - 1; j++) {
-                    let data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, "").replace(/,/g, "");
-                    row.push('"' + data + '"');
-                }
-                csv.push(row.join(","));
+        // Excel Export
+        function exportTableToExcel(tableId, filename, dataType = null) {
+            let wb;
+            if (dataType && appData[dataType]) {
+                 let data = appData[dataType];
+                 if (['partnerTx', 'expenses', 'emd', 'bills'].includes(dataType)) {
+                      const siteId = getActiveSiteId();
+                      if(siteId) data = data.filter(x => x.siteId === siteId);
+                 } else if (dataType === 'corpExpenses') {
+                      const compId = document.getElementById('activeCompanySelect').value;
+                      if(compId) data = data.filter(x => x.compId === compId);
+                 }
+                 let exportData = JSON.parse(JSON.stringify(data));
+                 exportData.forEach(row => {
+                     if(row.date) {
+                         const parts = row.date.split('-');
+                         if(parts.length === 3) row.date = `${parts[2]}/${parts[1]}/${parts[0].slice(-2)}`;
+                     }
+                     delete row.id; delete row.siteId; delete row.compId; delete row.companyId;
+                 });
+
+                 const ws = XLSX.utils.json_to_sheet(exportData);
+                 formatWorksheet(ws);
+                 wb = XLSX.utils.book_new();
+                 XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+            } else {
+                 const table = document.getElementById(tableId);
+                 wb = XLSX.utils.table_to_book(table, {sheet: "Sheet1"});
+                 formatWorksheet(wb.Sheets["Sheet1"]);
             }
-            const csvFile = new Blob([csv.join("\n")], { type: "text/csv" });
-            const link = document.createElement("a");
-            link.download = filename + ".csv";
-            link.href = window.URL.createObjectURL(csvFile);
-            link.click();
+            XLSX.writeFile(wb, filename + ".xlsx");
+        }
+
+        function formatWorksheet(ws) {
+            let range = XLSX.utils.decode_range(ws['!ref']);
+            let colTotals = {};
+
+            for (let key in ws) {
+                if (key[0] === '!') continue;
+                let cell = ws[key];
+                
+                // If it's a string containing the Rupee symbol, convert it to a pure number
+                if (cell.t === 's' && cell.v && typeof cell.v === 'string' && (cell.v.includes('₹') || cell.v.includes('Owe') || cell.v.includes('Advance'))) {
+                    let num = parseFloat(cell.v.replace(/[^\d.-]/g, ''));
+                    if (!isNaN(num)) {
+                        cell.t = 'n';
+                        cell.v = num;
+                    }
+                }
+                
+                // Track totals for numeric columns (skip header row 0)
+                let cellRef = XLSX.utils.decode_cell(key);
+                if (cell.t === 'n' && cellRef.r > 0) {
+                    if (!colTotals[cellRef.c]) colTotals[cellRef.c] = 0;
+                    colTotals[cellRef.c] += cell.v;
+                    cell.z = '[$₹-en-IN]#,##0.00';
+                }
+            }
+
+            // Append Total Row if we found any numeric columns
+            if (Object.keys(colTotals).length > 0) {
+                let newRow = range.e.r + 1;
+                // Put 'TOTAL' in the first column
+                ws[XLSX.utils.encode_cell({r: newRow, c: 0})] = { t: 's', v: 'TOTAL' };
+                // Put sums in the corresponding numeric columns
+                for (let c in colTotals) {
+                    ws[XLSX.utils.encode_cell({r: newRow, c: parseInt(c)})] = { t: 'n', v: colTotals[c], z: '[$₹-en-IN]#,##0.00' };
+                }
+                range.e.r = newRow;
+                ws['!ref'] = XLSX.utils.encode_range(range);
+            }
         }
 
         // Setup Forms
@@ -469,23 +1026,235 @@
         });
 
         function updateDropdowns() {
-            const compSel = document.getElementById('siteCompanyId'); compSel.innerHTML = '<option value="">-- Select Company --</option>';
+            const compSel = document.getElementById('siteCompanyId');
+            compSel.innerHTML = appData.companies.length ? '' : '<option value="">-- No Companies --</option>';
             appData.companies.forEach(c => compSel.innerHTML += `<option value="${c.id}">${c.name}</option>`);
+            
             const aCompSel = document.getElementById('activeCompanySelect'); const cVal = aCompSel.value;
-            aCompSel.innerHTML = '<option value="">-- Select Company --</option>';
+            aCompSel.innerHTML = appData.companies.length ? '' : '<option value="">-- No Companies --</option>';
             appData.companies.forEach(c => aCompSel.innerHTML += `<option value="${c.id}">${c.name}</option>`);
-            if(cVal) aCompSel.value = cVal;
+            if(cVal && appData.companies.find(c => c.id === cVal)) aCompSel.value = cVal;
+            else if(appData.companies.length) aCompSel.value = appData.companies[0].id;
+            
             const siteSel = document.getElementById('activeSiteSelect'); const currentVal = siteSel.value;
-            siteSel.innerHTML = '<option value="">-- Select a Site --</option>';
+            siteSel.innerHTML = appData.sites.length ? '' : '<option value="">-- No Sites --</option>';
             appData.sites.forEach(s => { const comp = appData.companies.find(c => c.id === s.companyId); siteSel.innerHTML += `<option value="${s.id}">${comp?comp.name:'?'} - ${s.location}</option>`; });
-            if(currentVal) siteSel.value = currentVal;
+            if(currentVal && appData.sites.find(s => s.id === currentVal)) siteSel.value = currentVal;
+            else if(appData.sites.length) siteSel.value = appData.sites[0].id;
+
+            // Custom Autocomplete logic is handled in setupAutocomplete
         }
 
         function renderSetupTables() {
             const cBody = document.getElementById('compTableBody'); cBody.innerHTML = '';
-            appData.companies.forEach(c => cBody.innerHTML += `<tr><td>${c.name}</td><td style="text-align: right; width: 80px;"><button class="btn-action btn-edit" onclick="editEntry('company', '${c.id}')"><i class="fa-solid fa-pen"></i></button><button class="btn-action" onclick="deleteEntry('companies', '${c.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`);
+            [...appData.companies].reverse().forEach(c => cBody.innerHTML += `<tr id="row-${c.id}"><td>${c.name}</td><td style="text-align: right; width: 120px;"><button class="btn-action" onclick="showRecordHistory('${c.id}')" title="History"><i class="fa-solid fa-clock-rotate-left"></i></button><button class="btn-action btn-edit" onclick="editEntry('company', '${c.id}')"><i class="fa-solid fa-pen"></i></button><button class="btn-action" onclick="deleteEntry('companies', '${c.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`);
             const sBody = document.getElementById('sitesTableBody'); sBody.innerHTML = '';
-            appData.sites.forEach(s => { const comp = appData.companies.find(c => c.id === s.companyId); sBody.innerHTML += `<tr><td>${comp?comp.name:''}</td><td>${s.location}</td><td>${s.manager}</td><td style="text-align: right; width: 80px;"><button class="btn-action btn-edit" onclick="editEntry('site', '${s.id}')"><i class="fa-solid fa-pen"></i></button><button class="btn-action" onclick="deleteEntry('sites', '${s.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`; });
+            [...appData.sites].reverse().forEach(s => { const comp = appData.companies.find(c => c.id === s.companyId); sBody.innerHTML += `<tr id="row-${s.id}"><td>${comp?comp.name:''}</td><td>${s.location}</td><td>${s.manager}</td><td style="text-align: right; width: 120px;"><button class="btn-action" onclick="showRecordHistory('${s.id}')" title="History"><i class="fa-solid fa-clock-rotate-left"></i></button><button class="btn-action btn-edit" onclick="editEntry('site', '${s.id}')"><i class="fa-solid fa-pen"></i></button><button class="btn-action" onclick="deleteEntry('sites', '${s.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`; });
+        }
+
+        function toggleOrgSites(companyId) {
+            const list = document.getElementById(`org-sites-${companyId}`);
+            const icon = document.getElementById(`org-icon-${companyId}`);
+            if (list.classList.contains('active')) {
+                list.classList.remove('active');
+                icon.classList.replace('fa-chevron-up', 'fa-chevron-down');
+            } else {
+                list.classList.add('active');
+                icon.classList.replace('fa-chevron-down', 'fa-chevron-up');
+            }
+        }
+
+        function toggleOrgEntities(siteId) {
+            const list = document.getElementById(`org-entities-${siteId}`);
+            if (list.classList.contains('active')) list.classList.remove('active');
+            else list.classList.add('active');
+        }
+
+        function switchOrgView(type) {
+            document.getElementById('btnListView').classList.remove('active');
+            document.getElementById('btnCanvasView').classList.remove('active');
+            document.getElementById('orgListContainer').classList.remove('active');
+            document.getElementById('orgCanvasContainer').classList.remove('active');
+            
+            if(type === 'list') {
+                document.getElementById('btnListView').classList.add('active');
+                document.getElementById('orgListContainer').classList.add('active');
+            } else {
+                document.getElementById('btnCanvasView').classList.add('active');
+                document.getElementById('orgCanvasContainer').classList.add('active');
+            }
+        }
+
+        function getEntityStats(siteId) {
+            const partners = {};
+            const vendors = {};
+
+            appData.partnerTx.filter(tx => tx.siteId === siteId).forEach(tx => {
+                if(!partners[tx.name]) partners[tx.name] = { invested: 0, withdrawn: 0 };
+                if(tx.type === 'invest') partners[tx.name].invested += tx.amount;
+                else partners[tx.name].withdrawn += tx.amount;
+            });
+
+            appData.expenses.filter(tx => tx.siteId === siteId).forEach(tx => {
+                if(!vendors[tx.vendor]) vendors[tx.vendor] = { billed: 0, paid: 0 };
+                if(tx.txType === 'bill') vendors[tx.vendor].billed += tx.amount;
+                else if(tx.txType === 'pay_given') vendors[tx.vendor].paid += tx.amount;
+                else if(tx.txType === 'pay_received') vendors[tx.vendor].paid -= tx.amount;
+                else { vendors[tx.vendor].billed += tx.amount; vendors[tx.vendor].paid += tx.amount; }
+            });
+
+            return { partners, vendors };
+        }
+
+        function renderOrgHierarchy() {
+            const listContainer = document.getElementById('orgListContainer');
+            const canvasContainer = document.getElementById('orgCanvasContainer');
+            
+            if (appData.companies.length === 0) {
+                const emptyState = '<div style="text-align: center; padding: 50px; color: var(--text-secondary);"><h2>No organizations setup yet</h2></div>';
+                listContainer.innerHTML = emptyState;
+                canvasContainer.innerHTML = emptyState;
+                return;
+            }
+
+            let listHtml = '<div class="hierarchy-container">';
+            let canvasHtml = '<div class="tree"><ul><li><div class="tree-node" style="text-align:center; border-top: 3px solid var(--accent-primary);"><div class="node-title" style="justify-content:center;"><i class="fa-solid fa-layer-group"></i> BizFlow Enterprise</div></div><ul>';
+
+            appData.companies.forEach(comp => {
+                const compSites = appData.sites.filter(s => s.companyId === comp.id);
+                const cStats = calculateCompanyStats(comp.id);
+                
+                // List View: Company
+                listHtml += `
+                <div class="org-company-card glass">
+                    <div class="org-company-header" onclick="toggleOrgSites('${comp.id}')">
+                        <div>
+                            <div class="org-company-title"><i class="fa-solid fa-building"></i> ${comp.name}</div>
+                            <div class="org-fin-stats" style="margin-top: 8px; padding-left: 0; display:flex; gap: 15px;">
+                                <span style="color:var(--success)">Rcvd: ${formatCurrency(cStats.totalNetRcvd)}</span>
+                                <span style="color:var(--orange)">Alloc: ${formatCurrency(cStats.totalAllocated)}</span>
+                                <span style="color:var(--danger)">Exp: ${formatCurrency(cStats.corpExp)}</span>
+                                <span style="color:var(--purple); font-weight:bold;">Res: ${formatCurrency(cStats.finalReserve)}</span>
+                            </div>
+                        </div>
+                        <div><span class="badge badge-purple" style="margin-right: 10px;">${compSites.length} Sites</span> <i id="org-icon-${comp.id}" class="fa-solid fa-chevron-down"></i></div>
+                    </div>
+                    <div id="org-sites-${comp.id}" class="org-sites-list">
+                `;
+                
+                // Canvas View: Company
+                canvasHtml += `<li><div class="tree-node node-company">
+                    <div class="node-title"><i class="fa-solid fa-building" style="color:var(--purple)"></i> ${comp.name}</div>
+                    <div class="node-stats">
+                        <div class="node-stat-row"><span>Rcvd:</span><span class="positive">${formatNum(cStats.totalNetRcvd)}</span></div>
+                        <div class="node-stat-row"><span>Alloc:</span><span class="highlight-orange">${formatNum(cStats.totalAllocated)}</span></div>
+                        <div class="node-stat-row"><span>Exp:</span><span class="negative">${formatNum(cStats.corpExp)}</span></div>
+                        <div class="node-stat-row" style="font-weight:bold;"><span>Res:</span><span style="color:var(--purple)">${formatNum(cStats.finalReserve)}</span></div>
+                    </div>
+                </div>`;
+                if(compSites.length > 0) canvasHtml += `<ul>`;
+                
+                if (compSites.length === 0) {
+                    listHtml += `<div style="color: var(--text-secondary); font-size: 13px;">No sites mapped to this company yet.</div>`;
+                } else {
+                    compSites.forEach(site => {
+                        const stats = getEntityStats(site.id);
+                        const sStats = calculateSiteStats(site.id);
+                        const pNames = Object.keys(stats.partners);
+                        const vNames = Object.keys(stats.vendors);
+
+                        // List View: Site
+                        listHtml += `
+                        <div class="org-site-item" style="flex-direction: column; align-items: stretch;">
+                            <div class="org-site-header" onclick="toggleOrgEntities('${site.id}')">
+                                <div class="org-site-info">
+                                    <span class="org-site-name"><i class="fa-solid fa-map-location-dot" style="margin-right: 8px;"></i>${site.location}</span>
+                                    <span class="org-site-dept"><i class="fa-solid fa-sitemap" style="margin-right: 8px;"></i>Dept: ${site.manager}</span>
+                                    <div class="org-fin-stats" style="padding-left:0;">
+                                        <span style="color:var(--success)">Cash: ${formatCurrency(sStats.availableCash)}</span>
+                                        <span style="color:var(--danger)">Exp: ${formatCurrency(sStats.exp)}</span>
+                                        <span style="color:var(--orange)">Locked: ${formatCurrency(sStats.totalLocked)}</span>
+                                    </div>
+                                </div>
+                                <div style="display:flex; gap:10px; align-items:center;">
+                                    <span class="badge badge-blue">${pNames.length} Partners</span>
+                                    <span class="badge badge-warning">${vNames.length} Vendors</span>
+                                    <button class="btn btn-export" onclick="event.stopPropagation(); document.getElementById('activeSiteSelect').value='${site.id}'; switchView('siteDashboard'); refreshSiteDashboard();">View</button>
+                                </div>
+                            </div>
+                            <div id="org-entities-${site.id}" class="org-entity-list">
+                                <h5 style="color: var(--accent-primary); margin-bottom: 5px; font-size: 12px; text-transform: uppercase;">Partners</h5>
+                                ${pNames.length === 0 ? '<div class="org-entity-item">No partners recorded.</div>' : pNames.map(p => {
+                                    const ps = stats.partners[p];
+                                    return `<div class="org-entity-item">
+                                        <div><i class="fa-solid fa-handshake" style="color: var(--blue);"></i> ${p}</div>
+                                        <div class="org-fin-stats"><span style="color:var(--success)">Inv: ${formatCurrency(ps.invested)}</span><span style="color:var(--danger)">Wd: ${formatCurrency(ps.withdrawn)}</span><span style="color:var(--blue)">Bal: ${formatCurrency(ps.invested - ps.withdrawn)}</span></div>
+                                    </div>`
+                                }).join('')}
+                                
+                                <h5 style="color: var(--warning); margin-top: 10px; margin-bottom: 5px; font-size: 12px; text-transform: uppercase;">Vendors</h5>
+                                ${vNames.length === 0 ? '<div class="org-entity-item">No vendors recorded.</div>' : vNames.map(v => {
+                                    const vs = stats.vendors[v];
+                                    return `<div class="org-entity-item">
+                                        <div><i class="fa-solid fa-truck" style="color: var(--warning);"></i> ${v}</div>
+                                        <div class="org-fin-stats"><span style="color:var(--orange)">Bill: ${formatCurrency(vs.billed)}</span><span style="color:var(--success)">Paid: ${formatCurrency(vs.paid)}</span><span style="color:var(--danger)">Owe: ${formatCurrency(vs.billed - vs.paid)}</span></div>
+                                    </div>`
+                                }).join('')}
+                            </div>
+                        </div>
+                        `;
+                        
+                        // Canvas View: Site
+                        canvasHtml += `<li><div class="tree-node node-site" onclick="document.getElementById('activeSiteSelect').value='${site.id}'; switchView('siteDashboard'); refreshSiteDashboard();" style="cursor:pointer;" title="Click to view dashboard">
+                            <div class="node-title"><i class="fa-solid fa-map-location-dot" style="color:var(--success)"></i> ${site.location}</div>
+                            <div class="node-sub">Dept: ${site.manager}</div>
+                            <div class="node-stats">
+                                <div class="node-stat-row"><span>Site Cash:</span><span class="positive">${formatNum(sStats.availableCash)}</span></div>
+                                <div class="node-stat-row"><span>Total Exp:</span><span class="negative">${formatNum(sStats.exp)}</span></div>
+                                <div class="node-stat-row"><span>Locked:</span><span class="highlight-orange">${formatNum(sStats.totalLocked)}</span></div>
+                            </div>
+                        </div>`;
+                        
+                        if(pNames.length > 0 || vNames.length > 0) {
+                            canvasHtml += `<ul>`;
+                            pNames.forEach(p => {
+                                const ps = stats.partners[p];
+                                canvasHtml += `<li><div class="tree-node node-partner">
+                                    <div class="node-title"><i class="fa-solid fa-handshake" style="color:var(--blue)"></i> ${p}</div>
+                                    <div class="node-stats">
+                                        <div class="node-stat-row"><span>Inv:</span><span class="positive">${formatNum(ps.invested)}</span></div>
+                                        <div class="node-stat-row"><span>Wd:</span><span class="negative">${formatNum(ps.withdrawn)}</span></div>
+                                        <div class="node-stat-row" style="font-weight:bold;"><span>Bal:</span><span style="color:var(--blue)">${formatNum(ps.invested - ps.withdrawn)}</span></div>
+                                    </div>
+                                </div></li>`;
+                            });
+                            vNames.forEach(v => {
+                                const vs = stats.vendors[v];
+                                canvasHtml += `<li><div class="tree-node node-vendor">
+                                    <div class="node-title"><i class="fa-solid fa-truck" style="color:var(--warning)"></i> ${v}</div>
+                                    <div class="node-stats">
+                                        <div class="node-stat-row"><span>Bill:</span><span class="highlight-orange">${formatNum(vs.billed)}</span></div>
+                                        <div class="node-stat-row"><span>Paid:</span><span class="positive">${formatNum(vs.paid)}</span></div>
+                                        <div class="node-stat-row" style="font-weight:bold;"><span>Owe:</span><span class="negative">${formatNum(vs.billed - vs.paid)}</span></div>
+                                    </div>
+                                </div></li>`;
+                            });
+                            canvasHtml += `</ul>`;
+                        }
+                        canvasHtml += `</li>`;
+                    });
+                }
+                
+                listHtml += `</div></div>`;
+                if(compSites.length > 0) canvasHtml += `</ul>`;
+                canvasHtml += `</li>`;
+            });
+            
+            listHtml += '</div>';
+            canvasHtml += '</ul></li></ul></div>';
+            
+            listContainer.innerHTML = listHtml;
+            canvasContainer.innerHTML = canvasHtml;
         }
 
         // Transactions
@@ -494,15 +1263,15 @@
         document.getElementById('partnerTxForm').addEventListener('submit', (e) => { e.preventDefault(); const siteId = getActiveSiteId(); if(!siteId) return alert("Select site"); saveOrUpdate('partnerTx', { siteId, date: document.getElementById('ptDate').value, payType: document.getElementById('ptPayType').value, name: document.getElementById('ptName').value, desc: document.getElementById('ptDesc').value, type: document.getElementById('ptType').value, amount: getAmt('ptAmount') }); e.target.reset(); setToday(); });
         document.getElementById('expenseForm').addEventListener('submit', (e) => { 
             e.preventDefault(); const siteId = getActiveSiteId(); if(!siteId) return alert("Select site"); 
-            saveOrUpdate('expenses', { siteId, date: document.getElementById('expDate').value, payType: document.getElementById('expPayType').value, vendor: document.getElementById('expVendor').value, txType: document.getElementById('expTxType').value, desc: document.getElementById('expDesc').value, amount: getAmt('expAmount') }); 
+            saveOrUpdate('expenses', { siteId, date: document.getElementById('expDate').value, payType: document.getElementById('expPayType').value, vendor: document.getElementById('expVendor').value, txType: document.getElementById('expTxType').value, desc: document.getElementById('expDesc').value, amount: getAmt('expAmount'), tds: getAmt('expTds') }); 
             e.target.reset(); setToday(); 
         });
-        document.getElementById('emdForm').addEventListener('submit', (e) => { e.preventDefault(); const siteId = getActiveSiteId(); if(!siteId) return alert("Select site"); saveOrUpdate('emd', { siteId, date: document.getElementById('emdDate').value, payType: document.getElementById('emdPayType').value, desc: document.getElementById('emdDesc').value, amount: getAmt('emdAmount'), releaseDate: document.getElementById('emdReleaseDate').value }); e.target.reset(); setToday(); });
+        document.getElementById('emdForm').addEventListener('submit', (e) => { e.preventDefault(); const siteId = getActiveSiteId(); if(!siteId) return alert("Select site"); saveOrUpdate('emd', { siteId, date: document.getElementById('emdDate').value, payType: document.getElementById('emdPayType').value, desc: document.getElementById('emdDesc').value, amount: getAmt('emdAmount'), status: document.getElementById('emdStatus').value, releaseDate: document.getElementById('emdReleaseDate').value }); e.target.reset(); setToday(); });
         
         document.getElementById('billForm').addEventListener('submit', (e) => {
             e.preventDefault(); const siteId = getActiveSiteId(); if(!siteId) return alert("Select site");
-            const gross = getAmt('billGross'), rm = getAmt('billRM'), ded = getAmt('billDed'), alloc = getAmt('billAlloc');
-            saveOrUpdate('bills', { siteId, date: document.getElementById('billDate').value, payType: document.getElementById('billPayType').value, desc: document.getElementById('billDesc').value, gross, rm, ded, net: gross - rm - ded, alloc, rmReleaseDate: document.getElementById('billRmRelease').value });
+            const gross = getAmt('billGross'), rm = getAmt('billRM'), tds = getAmt('billTds'), advRec = getAmt('billAdvRec'), ded = getAmt('billDed'), alloc = getAmt('billAlloc');
+            saveOrUpdate('bills', { siteId, date: document.getElementById('billDate').value, payType: document.getElementById('billPayType').value, desc: document.getElementById('billDesc').value, gross, rm, tds, advRec, ded, net: gross - rm - tds - advRec - ded, alloc, rmReleaseDate: document.getElementById('billRmRelease').value });
             e.target.reset(); setToday();
         });
 
@@ -520,13 +1289,32 @@
                 const amt = x.amount; const v = x.vendor || 'Unknown';
                 if(!vBal[v]) vBal[v] = { billed: 0, paid: 0 };
 
-                if(x.txType === 'bill') { exp += amt; vBal[v].billed += amt; }
-                else if(x.txType === 'pay_given') { cashOut += amt; vBal[v].paid += amt; }
+                if(x.txType === 'bill') { 
+                    const tds = x.tds ? parseFloat(x.tds) : 0;
+                    exp += amt; 
+                    vBal[v].billed += (amt - tds); 
+                }
+                else if(x.txType === 'pay_given' || x.txType === 'advance_given') { cashOut += amt; vBal[v].paid += amt; }
                 else if(x.txType === 'pay_received') { cashIn += amt; vBal[v].paid -= amt; }
                 else { exp += amt; cashOut += amt; } // Legacy fallback
             });
 
-            appData.emd.filter(x => x.siteId === siteId).forEach(x => { if(!isReleased(x.releaseDate)) emdLocked += x.amount; });
+            // EMD Logic
+            appData.emd.filter(x => x.siteId === siteId).forEach(x => { 
+                const stat = x.status;
+                if(stat === 'Pending' || stat === 'Converted') {
+                    emdLocked += x.amount; // Still locked
+                } else if(stat === 'Forfeited') {
+                    exp += x.amount; // Permanent loss
+                    cashOut += x.amount; 
+                } else if(stat === 'Refunded') {
+                    // Do nothing, cash is available
+                } else {
+                    // Legacy records without status
+                    if(!isReleased(x.releaseDate)) emdLocked += x.amount;
+                }
+            });
+            
             appData.bills.filter(x => x.siteId === siteId).forEach(x => { billAllocatedToSite += x.alloc; if(!isReleased(x.rmReleaseDate)) { billRMLocked += x.rm; } });
             
             const totalLocked = emdLocked + billRMLocked;
@@ -555,17 +1343,26 @@
             ['pt','exp','emd','bill'].forEach(prefix => { document.getElementById(prefix+'TableBody').innerHTML = ''; });
             document.getElementById('vendorBalBody').innerHTML = '';
             
-            appData.partnerTx.filter(x => x.siteId === siteId).forEach(x => {
-                document.getElementById('ptTableBody').innerHTML += `<tr><td>${x.date}</td><td>${x.name}</td><td>${x.desc||''}</td><td><span class="badge ${x.type==='invest'?'badge-success':'badge-danger'}">${x.type}</span></td><td>${x.payType}</td><td><span class="currency">${formatCurrency(x.amount)}</span></td><td style="text-align:right; width: 80px;"><button class="btn-action btn-edit" onclick="editEntry('partnerTx','${x.id}')"><i class="fa-solid fa-pen"></i></button><button class="btn-action" onclick="deleteEntry('partnerTx','${x.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
+            appData.partnerTx.filter(x => x.siteId === siteId).reverse().sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(x => {
+                let typeSelect = `<select class="form-control" style="padding: 2px 5px; height: auto; min-width: 100px;" onchange="updateRecordStatus('partnerTx', '${x.id}', this.value)">
+                    <option value="invest" ${x.type==='invest'?'selected':''}>Invest</option>
+                    <option value="withdraw" ${x.type==='withdraw'?'selected':''}>Withdraw</option>
+                </select>`;
+                document.getElementById('ptTableBody').innerHTML += `<tr id="row-${x.id}"><td>${x.date}</td><td>${x.name}</td><td>${x.desc||''}</td><td>${typeSelect}</td><td>${x.payType}</td><td><span class="currency">${formatCurrency(x.amount)}</span></td><td style="text-align:right; width: 120px;"><button class="btn-action" onclick="showRecordHistory('${x.id}')" title="History"><i class="fa-solid fa-clock-rotate-left"></i></button><button class="btn-action btn-edit" onclick="editEntry('partnerTx','${x.id}')"><i class="fa-solid fa-pen"></i></button><button class="btn-action" onclick="deleteEntry('partnerTx','${x.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
             });
             
-            appData.expenses.filter(x => x.siteId === siteId).forEach(x => {
-                let badge = '';
-                if(x.txType === 'bill') badge = '<span class="badge badge-warning">Bill</span>';
-                else if(x.txType === 'pay_given') badge = '<span class="badge badge-success">Pay Out</span>';
-                else if(x.txType === 'pay_received') badge = '<span class="badge badge-blue">Pay In</span>';
+            appData.expenses.filter(x => x.siteId === siteId).reverse().sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(x => {
+                let txTypeSelect = `<select class="form-control" style="padding: 2px 5px; height: auto; min-width: 110px;" onchange="updateRecordStatus('expenses', '${x.id}', this.value)">
+                    <option value="bill" ${x.txType==='bill'?'selected':''}>Bill</option>
+                    <option value="pay_given" ${x.txType==='pay_given'?'selected':''}>Pay Out</option>
+                    <option value="advance_given" ${x.txType==='advance_given'?'selected':''}>Advance</option>
+                    <option value="pay_received" ${x.txType==='pay_received'?'selected':''}>Pay In</option>
+                </select>`;
 
-                document.getElementById('expTableBody').innerHTML += `<tr><td>${x.date}</td><td>${x.vendor||'-'}</td><td>${badge}</td><td>${x.desc}</td><td><span class="currency">${formatCurrency(x.amount)}</span></td><td style="text-align:right; width: 80px;"><button class="btn-action btn-edit" onclick="editEntry('expenses','${x.id}')"><i class="fa-solid fa-pen"></i></button><button class="btn-action" onclick="deleteEntry('expenses','${x.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
+                let descStr = x.desc;
+                if(x.tds && parseFloat(x.tds) > 0) descStr += ` <span style="color:var(--danger);font-size:0.9em;">(-${formatCurrency(x.tds)} TDS)</span>`;
+
+                document.getElementById('expTableBody').innerHTML += `<tr id="row-${x.id}"><td>${x.date}</td><td>${x.vendor||'-'}</td><td>${txTypeSelect}</td><td>${descStr}</td><td><span class="currency">${formatCurrency(x.amount)}</span></td><td style="text-align:right; width: 120px;"><button class="btn-action" onclick="showRecordHistory('${x.id}')" title="History"><i class="fa-solid fa-clock-rotate-left"></i></button><button class="btn-action btn-edit" onclick="editEntry('expenses','${x.id}')"><i class="fa-solid fa-pen"></i></button><button class="btn-action" onclick="deleteEntry('expenses','${x.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
             });
 
             // Render Vendor Balances
@@ -576,12 +1373,23 @@
                 document.getElementById('vendorBalBody').innerHTML += `<tr><td><strong>${v}</strong></td><td class="currency">${formatCurrency(b.billed)}</td><td class="currency">${formatCurrency(b.paid)}</td><td>${status}</td></tr>`;
             });
 
-            appData.emd.filter(x => x.siteId === siteId).forEach(x => {
-                document.getElementById('emdTableBody').innerHTML += `<tr><td>${x.date}</td><td>${x.desc}</td><td>${x.payType}</td><td><span class="currency">${formatCurrency(x.amount)}</span></td><td>${isReleased(x.releaseDate)?'Released':'Locked until '+x.releaseDate}</td><td style="text-align:right; width: 80px;"><button class="btn-action btn-edit" onclick="editEntry('emd','${x.id}')"><i class="fa-solid fa-pen"></i></button><button class="btn-action" onclick="deleteEntry('emd','${x.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
+            appData.emd.filter(x => x.siteId === siteId).reverse().sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(x => {
+                let statusSelect = `<select class="form-control" style="padding: 2px 5px; height: auto; min-width: 100px;" onchange="updateRecordStatus('emd', '${x.id}', this.value)">
+                    <option value="Pending" ${x.status==='Pending'?'selected':''}>Pending</option>
+                    <option value="Converted" ${x.status==='Converted'?'selected':''}>Converted</option>
+                    <option value="Refunded" ${x.status==='Refunded'?'selected':''}>Refunded</option>
+                    <option value="Forfeited" ${x.status==='Forfeited'?'selected':''}>Forfeited</option>
+                </select>`;
+                document.getElementById('emdTableBody').innerHTML += `<tr id="row-${x.id}"><td>${x.date}</td><td>${x.desc}</td><td>${x.payType}</td><td><span class="currency">${formatCurrency(x.amount)}</span></td><td>${statusSelect}</td><td style="text-align:right; width: 120px;"><button class="btn-action" onclick="showRecordHistory('${x.id}')" title="History"><i class="fa-solid fa-clock-rotate-left"></i></button><button class="btn-action btn-edit" onclick="editEntry('emd','${x.id}')"><i class="fa-solid fa-pen"></i></button><button class="btn-action" onclick="deleteEntry('emd','${x.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
             });
-            appData.bills.filter(x => x.siteId === siteId).forEach(x => {
-                const retained = x.net - x.alloc;
-                document.getElementById('billTableBody').innerHTML += `<tr><td>${x.date}</td><td>${x.desc}</td><td class="currency">${formatCurrency(x.net)}</td><td class="currency positive">${formatCurrency(x.alloc)}</td><td class="currency highlight-purple">${formatCurrency(retained)}</td><td>${isReleased(x.rmReleaseDate)?'Released':'Locked'}</td><td style="text-align:right; width: 80px;"><button class="btn-action btn-edit" onclick="editEntry('bills','${x.id}')"><i class="fa-solid fa-pen"></i></button><button class="btn-action" onclick="deleteEntry('bills','${x.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
+            appData.bills.filter(x => x.siteId === siteId).reverse().sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(x => {
+                const isRel = isReleased(x.rmReleaseDate);
+                const retained = (x.net - x.alloc) + (isRel ? (x.rm || 0) : 0);
+                let statusSelect = `<select class="form-control" style="padding: 2px 5px; height: auto; min-width: 90px;" onchange="updateRecordStatus('bills', '${x.id}', this.value)">
+                    <option value="" ${!isRel?'selected':''}>Locked</option>
+                    <option value="Released" ${isRel?'selected':''}>Released</option>
+                </select>`;
+                document.getElementById('billTableBody').innerHTML += `<tr id="row-${x.id}"><td>${x.date}</td><td>${x.desc}</td><td class="currency">${formatCurrency(x.gross||0)}</td><td class="currency ${isRel ? 'positive' : 'highlight-orange'}">${formatCurrency(x.rm||0)}</td><td class="currency">${formatCurrency(x.net)}</td><td class="currency positive">${formatCurrency(x.alloc)}</td><td class="currency highlight-purple">${formatCurrency(retained)}</td><td>${statusSelect}</td><td style="text-align:right; width: 120px;"><button class="btn-action" onclick="showRecordHistory('${x.id}')" title="History"><i class="fa-solid fa-clock-rotate-left"></i></button><button class="btn-action btn-edit" onclick="editEntry('bills','${x.id}')"><i class="fa-solid fa-pen"></i></button><button class="btn-action" onclick="deleteEntry('bills','${x.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
             });
         }
 
@@ -597,8 +1405,8 @@
             document.getElementById('corpReserve').textContent = formatCurrency(stats.finalReserve);
 
             const cBody = document.getElementById('cExpTableBody'); cBody.innerHTML = '';
-            appData.corpExpenses.filter(c => c.compId === compId).forEach(c => {
-                cBody.innerHTML += `<tr><td>${c.date}</td><td>${c.desc}</td><td>${c.payType}</td><td class="currency negative">${formatCurrency(c.amount)}</td><td style="text-align: right; width: 80px;"><button class="btn-action btn-edit" onclick="editEntry('corpExpenses', '${c.id}')"><i class="fa-solid fa-pen"></i></button><button class="btn-action" onclick="deleteEntry('corpExpenses', '${c.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
+            appData.corpExpenses.filter(c => c.compId === compId).reverse().sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(c => {
+                cBody.innerHTML += `<tr id="row-${c.id}"><td>${c.date}</td><td>${c.desc}</td><td>${c.payType}</td><td class="currency negative">${formatCurrency(c.amount)}</td><td style="text-align: right; width: 120px;"><button class="btn-action" onclick="showRecordHistory('${c.id}')" title="History"><i class="fa-solid fa-clock-rotate-left"></i></button><button class="btn-action btn-edit" onclick="editEntry('corpExpenses', '${c.id}')"><i class="fa-solid fa-pen"></i></button><button class="btn-action" onclick="deleteEntry('corpExpenses', '${c.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
             });
         }
 
@@ -618,6 +1426,153 @@
             document.getElementById('globLocked').textContent = formatCurrency(gLocked);
             document.getElementById('globInv').textContent = formatCurrency(gInv);
             document.getElementById('globCorp').textContent = formatCurrency(gCorp);
+            
+            // Render Action Items
+            const actionsList = document.getElementById('pendingActionsList');
+            actionsList.innerHTML = '';
+            let actionCount = 0;
+
+            appData.emd.forEach(e => {
+                if(e.status === 'Pending') {
+                    const site = appData.sites.find(s => s.id === e.siteId);
+                    actionsList.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                        <div><span class="badge badge-danger" style="margin-right:10px;">Pending EMD</span> <strong>${site?site.location:'?'}</strong> - ${e.desc} (${formatCurrency(e.amount)})</div>
+                        <button class="btn btn-primary" style="padding: 4px 10px; font-size: 12px;" onclick="document.getElementById('activeSiteSelect').value='${e.siteId}'; switchView('siteDashboard'); refreshSiteDashboard(); switchSiteTab('emd'); highlightRow('${e.id}');">Go to Action</button>
+                    </div>`;
+                    actionCount++;
+                }
+            });
+
+            appData.bills.forEach(b => {
+                if(!isReleased(b.rmReleaseDate) && b.rm > 0) {
+                    const site = appData.sites.find(s => s.id === b.siteId);
+                    actionsList.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                        <div><span class="badge badge-danger" style="margin-right:10px;">Locked RM</span> <strong>${site?site.location:'?'}</strong> - ${b.desc} (${formatCurrency(b.rm)})</div>
+                        <button class="btn btn-primary" style="padding: 4px 10px; font-size: 12px;" onclick="document.getElementById('activeSiteSelect').value='${b.siteId}'; switchView('siteDashboard'); refreshSiteDashboard(); switchSiteTab('rabills'); highlightRow('${b.id}');">Go to Action</button>
+                    </div>`;
+                    actionCount++;
+                }
+            });
+
+            if(actionCount === 0) {
+                actionsList.innerHTML = '<div style="color: var(--text-secondary); font-style: italic; padding: 10px;">No pending actions or reminders! All caught up.</div>';
+            }
+            
+        }
+
+        function highlightRow(id) {
+            setTimeout(() => {
+                const row = document.getElementById(`row-${id}`);
+                if(row) {
+                    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    row.classList.add('highlight-glow');
+                    setTimeout(() => row.classList.remove('highlight-glow'), 3000);
+                }
+            }, 100);
+        }
+
+        let calCurrentDate = new Date();
+        
+        function renderCalendar() {
+            const year = calCurrentDate.getFullYear();
+            const month = calCurrentDate.getMonth();
+            const today = new Date();
+            const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+            
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            document.getElementById('calMonthYear').innerText = `${monthNames[month]} ${year}`;
+            
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            const txMap = {};
+            const addTx = (date, obj, type, label, badgeClass) => {
+                if(!date) return;
+                if(!txMap[date]) txMap[date] = [];
+                txMap[date].push({ ...obj, _type: type, _label: label, _badgeClass: badgeClass });
+            };
+            
+            appData.partnerTx.forEach(x => addTx(x.date, x, 'Partner', x.name, 'badge-partner'));
+            appData.expenses.forEach(x => addTx(x.date, x, 'Vendor', x.vendor, 'badge-vendor'));
+            appData.bills.forEach(x => addTx(x.date, x, 'RA Bill', x.desc, 'badge-bill'));
+            appData.emd.forEach(x => addTx(x.date, x, 'EMD', x.desc, 'badge-emd'));
+            appData.corpExpenses.forEach(x => addTx(x.date, x, 'Corp Exp', x.desc, 'badge-emd'));
+            
+            let gridHtml = '<div class="cal-weekday">Sun</div><div class="cal-weekday">Mon</div><div class="cal-weekday">Tue</div><div class="cal-weekday">Wed</div><div class="cal-weekday">Thu</div><div class="cal-weekday">Fri</div><div class="cal-weekday">Sat</div>';
+            
+            for(let i=0; i<firstDay; i++) gridHtml += `<div class="cal-cell empty-cell"></div>`;
+            
+            for(let d=1; d<=daysInMonth; d++) {
+                const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                const isToday = (dateStr === todayStr);
+                const txs = txMap[dateStr] || [];
+                
+                let badgesHtml = '';
+                const maxBadges = 3;
+                for(let i=0; i<Math.min(txs.length, maxBadges); i++) {
+                    badgesHtml += `<div class="cal-badge ${txs[i]._badgeClass}">${txs[i]._label || txs[i]._type}</div>`;
+                }
+                if(txs.length > maxBadges) {
+                    badgesHtml += `<div class="cal-badge" style="background: rgba(255,255,255,0.1); color: #ccc;">+${txs.length - maxBadges} more</div>`;
+                }
+                
+                gridHtml += `<div class="cal-cell ${isToday ? 'today' : ''}" onclick="showDayDetails('${dateStr}')">
+                    <div class="cal-date-num">${d}</div>
+                    <div class="cal-badges">${badgesHtml}</div>
+                </div>`;
+            }
+            
+            document.getElementById('calGrid').innerHTML = gridHtml;
+            showDayDetails(todayStr);
+        }
+
+        function changeMonth(delta) {
+            calCurrentDate.setMonth(calCurrentDate.getMonth() + delta);
+            renderCalendar();
+        }
+        function goToToday() {
+            calCurrentDate = new Date();
+            renderCalendar();
+        }
+
+        function showDayDetails(dateStr) {
+            const dateObj = new Date(dateStr);
+            document.getElementById('calSidebarDate').innerText = dateObj.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            
+            const txMap = {};
+            const addTx = (date, obj, type, label, badgeClass) => { if(!date) return; if(!txMap[date]) txMap[date] = []; txMap[date].push({ ...obj, _type: type, _label: label, _badgeClass: badgeClass }); };
+            appData.partnerTx.forEach(x => addTx(x.date, x, 'Partner', x.name, 'badge-partner'));
+            appData.expenses.forEach(x => addTx(x.date, x, 'Vendor', x.vendor, 'badge-vendor'));
+            appData.bills.forEach(x => addTx(x.date, x, 'RA Bill', x.desc, 'badge-bill'));
+            appData.emd.forEach(x => addTx(x.date, x, 'EMD', x.desc, 'badge-emd'));
+            appData.corpExpenses.forEach(x => addTx(x.date, x, 'Corp Exp', x.desc, 'badge-emd'));
+            
+            const txs = txMap[dateStr] || [];
+            const content = document.getElementById('calSidebarContent');
+            if(txs.length === 0) {
+                content.innerHTML = '<div style="color: var(--text-secondary); font-style: italic;">No transactions on this date.</div>';
+                return;
+            }
+            
+            let html = '';
+            txs.forEach(tx => {
+                const site = appData.sites.find(s => s.id === tx.siteId);
+                const amount = tx.amount || tx.gross || 0;
+                let amtColor = tx._type === 'RA Bill' ? 'var(--success)' : 'var(--text-primary)';
+                if(tx.type === 'withdraw' || tx.txType === 'pay_given' || tx._type === 'Corp Exp' || tx.status === 'Forfeited') amtColor = 'var(--danger)';
+                else if(tx.type === 'invest' || tx.txType === 'pay_received') amtColor = 'var(--success)';
+
+                html += `<div style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; border-left: 3px solid var(--accent-primary);">
+                    <div style="display:flex; justify-content:space-between; margin-bottom: 5px;">
+                        <span class="cal-badge ${tx._badgeClass}">${tx._type}</span>
+                        <span class="currency" style="font-weight:bold; color: ${amtColor};">${formatCurrency(amount)}</span>
+                    </div>
+                    <div style="font-size: 13px;"><strong>${tx._label || 'N/A'}</strong></div>
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">${site ? site.location : 'Corporate Office'}</div>
+                    ${tx.siteId ? `<button class="btn btn-primary" style="padding: 4px 10px; font-size: 11px;" onclick="document.getElementById('activeSiteSelect').value='${tx.siteId}'; switchView('siteDashboard'); refreshSiteDashboard();">View Site</button>` : ''}
+                </div>`;
+            });
+            content.innerHTML = html;
         }
 
         initApp();
