@@ -933,7 +933,9 @@
         .calendar-layout {
             display: flex;
             gap: 20px;
-            align-items: flex-start;
+            align-items: stretch;
+            flex: 1;
+            min-height: 0;
         }
 
         .calendar-main {
@@ -1217,7 +1219,7 @@
             Dashboard</div>
         <div class="nav-item" onclick="switchView('orgHierarchy')"><i class="fa-solid fa-sitemap"></i> Organization
             Hierarchy</div>
-        <div class="nav-item" onclick="openInsights()"><i class="fa-solid fa-chart-pie"></i> Insights & Reports</div>
+
         <div class="nav-item" onclick="switchView('auditLogs')"><i class="fa-solid fa-list-check"></i> Audit Logs</div>
         <div class="nav-item" id="navItemSearchResults" style="display: none;" onclick="switchView('searchResults')"><i
                 class="fa-solid fa-magnifying-glass"></i> Search Results</div>
@@ -1249,9 +1251,8 @@
         </div>
 
         <!-- Search Results View -->
-        <div id="searchResultsView" class="view">
-            <div class="header"
-                style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px;">
+        <div id="searchResultsView" class="view active" style="display: flex; flex-direction: column;">
+            <div class="header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-shrink: 0;">
                 <h1 id="searchResultTitle">Insights & Reports</h1>
                 <!-- Hidden inputs for global search logic -->
                 <input type="hidden" id="searchStartDate">
@@ -1260,7 +1261,7 @@
                 <div id="searchInsights" style="display:none;"></div>
             </div>
 
-            <div class="calendar-layout" style="display: flex; gap: 24px; align-items: stretch; position: relative;">
+            <div class="calendar-layout" style="display: flex; gap: 24px; align-items: stretch; flex: 1; min-height: 0;">
                 <!-- Left: Calendar (Full Width) -->
                 <div class="calendar-main card glass" style="flex: 2; display: flex; flex-direction: column;">
                     <div class="calendar-header-bar">
@@ -1300,7 +1301,7 @@
                 </div>
 
                 <!-- Right Side Panel: Unified Insights & Search Panel -->
-                <div id="unifiedSearchModal" class="card glass" style="width: 430px; flex: 0 0 430px; display: flex; flex-direction: column; padding: 25px; max-height: 80vh; overflow-y: auto;">
+                <div id="unifiedSearchModal" class="card glass" style="width: 430px; flex: 0 0 430px; display: flex; flex-direction: column; padding: 25px; overflow-y: auto;">
                     <!-- Header -->
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                         <h2 style="margin: 0; font-size: 20px; color: white;"><i class="fa-solid fa-chart-pie" style="color: var(--accent-primary);"></i> Day Snapshot</h2>
@@ -1318,13 +1319,17 @@
                         </div>
                     </div>
 
-                    <!-- Quick Filters -->
-                    <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+                    <!-- Quick Filters Row 1 -->
+                    <div style="display: flex; gap: 6px; margin-bottom: 6px;">
                         <button class="btn" style="flex: 1; padding: 6px; font-size: 12px; border-radius: 6px; background: transparent; color: var(--success); border: 1px solid var(--success);" onclick="setSearchDateRange('today', true)">Today</button>
+                        <button class="btn" style="flex: 1; padding: 6px; font-size: 12px; border-radius: 6px; background: transparent; color: var(--success); border: 1px solid var(--success);" onclick="setSearchDateRange('yesterday', true)">Yesterday</button>
                         <button class="btn" style="flex: 1; padding: 6px; font-size: 12px; border-radius: 6px; background: transparent; color: var(--success); border: 1px solid var(--success);" onclick="setSearchDateRange('week', true)">Week</button>
+                    </div>
+                    <!-- Quick Filters Row 2 -->
+                    <div style="display: flex; gap: 6px; margin-bottom: 20px;">
                         <button class="btn" style="flex: 1; padding: 6px; font-size: 12px; border-radius: 6px; background: transparent; color: var(--success); border: 1px solid var(--success);" onclick="setSearchDateRange('month', true)">Month</button>
                         <button class="btn" style="flex: 1; padding: 6px; font-size: 12px; border-radius: 6px; background: transparent; color: var(--success); border: 1px solid var(--success);" onclick="setSearchDateRange('year', true)">Year</button>
-                        <button class="btn" style="flex: 1; padding: 6px; font-size: 12px; border-radius: 6px; background: transparent; color: var(--success); border: 1px solid var(--success);" onclick="setSearchDateRange('clear', true)"><i class="fa-solid fa-times"></i></button>
+                        <button class="btn" style="flex: 1; padding: 6px; font-size: 12px; border-radius: 6px; background: transparent; color: var(--success); border: 1px solid var(--success);" onclick="setSearchDateRange('clear', true)"><i class="fa-solid fa-times"></i> Clear</button>
                     </div>
 
                     <!-- Insights Summary -->
@@ -2334,6 +2339,9 @@
             setupAutocomplete('ptName', 'partnerAutocompleteList', () => [...new Set(appData.partnerTx.map(x => x.name).filter(Boolean))]);
             setupAutocomplete('expVendor', 'vendorAutocompleteList', () => [...new Set(appData.expenses.map(x => x.vendor).filter(Boolean))]);
             setupAutocomplete('ptxCompany', 'ptxCompanyAutocompleteList', () => [...new Set(appData.personalTx.map(x => x.company).filter(Boolean))]);
+
+            // Default: show calendar view with today's data
+            openInsights();
         }
 
         function setupAutocomplete(inputId, listId, dataGetter) {
@@ -2368,7 +2376,9 @@
 
         function setToday() {
             const today = new Date().toISOString().split('T')[0];
-            document.querySelectorAll('input[type="date"]').forEach(el => { if (!el.id.includes('Release')) el.value = today; });
+            document.querySelectorAll('input[type="date"]').forEach(el => {
+                if (!el.id.includes('Release') && !el.id.includes('modal')) el.value = today;
+            });
         }
 
         function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(appData)); updateDropdowns(); renderSetupTables(); renderGlobalDashboard(); refreshSiteDashboard(); refreshCompanyDashboard(); renderOrgHierarchy(); renderCalendar(); }
@@ -2725,6 +2735,11 @@
             if (range === 'today') {
                 startInput.value = formatD(today);
                 endInput.value = formatD(today);
+            } else if (range === 'yesterday') {
+                const yesterday = new Date(today);
+                yesterday.setDate(today.getDate() - 1);
+                startInput.value = formatD(yesterday);
+                endInput.value = formatD(yesterday);
             } else if (range === 'week') {
                 const start = new Date(today);
                 start.setDate(today.getDate() - today.getDay());
@@ -2765,7 +2780,12 @@
         function openInsights() {
             document.getElementById('searchResultTitle').textContent = `Insights & Reports`;
             document.getElementById('globalSearchInput').value = '';
-            
+
+            // Hide leftover search results from previous text search
+            const searchTable = document.getElementById('searchTableContainer');
+            if (searchTable) searchTable.style.display = 'none';
+            document.getElementById('navItemSearchResults').style.display = 'none';
+
             const modal = document.getElementById('unifiedSearchModal');
             if (modal) modal.style.display = 'flex';
             
@@ -3919,7 +3939,7 @@
                 const txs = txMap[dateStr] || [];
 
                 let itemsHtml = '';
-                const maxItems = 4;
+                const maxItems = 3;
                 for (let i = 0; i < Math.min(txs.length, maxItems); i++) {
                     let itemClass = 'cal-item-neutral';
                     if (txs[i].type === 'withdraw' || txs[i].txType === 'pay_given' || txs[i]._type === 'Vendor' || txs[i]._type === 'Corp Exp' || txs[i].status === 'Forfeited') itemClass = 'cal-item-expense';
