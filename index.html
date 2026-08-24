@@ -48,10 +48,13 @@
         .card-value { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
         .card-subtext { font-size: 13px; color: var(--text-secondary); }
 
-        .form-row { display: flex; gap: 15px; margin-bottom: 16px; }
+        .form-row { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 15px; }
         .form-row .form-group { flex: 1; margin-bottom: 0; }
         .form-group { margin-bottom: 16px; }
         .form-group label { display: block; margin-bottom: 6px; font-size: 13px; color: var(--text-secondary); }
+        .radio-group { display: flex; gap: 15px; align-items: center; height: 38px; }
+        .form-group .radio-group label { display: flex; align-items: center; gap: 6px; margin-bottom: 0; font-weight: 500; font-size: 14px; color: var(--text-primary); cursor: pointer; flex-direction: row; }
+        .radio-group input[type="radio"] { margin: 0; cursor: pointer; width: 16px; height: 16px; accent-color: var(--accent-primary); }
         .form-control { width: 100%; padding: 12px 16px; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-size: 14px; transition: border-color 0.3s; color-scheme: dark; }
         .form-control:focus { outline: none; border-color: var(--accent-primary); }
         select.form-control option { background-color: var(--bg-color); color: var(--text-primary); }
@@ -70,7 +73,9 @@
         .btn-edit { color: var(--blue); }
 
         .table-container { width: 100%; overflow-x: auto; margin-top: 15px; max-height: 400px; }
-        table { width: 100%; border-collapse: collapse; }
+        .filter-container { display: flex; gap: 10px; align-items: center; margin-left: auto; margin-right: 15px; }
+        .filter-select { padding: 4px 8px; font-size: 12px; height: auto; min-width: 100px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
         th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border-color); font-size: 13px; }
         th { color: var(--text-secondary); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; position: sticky; top: 0; background: var(--surface-color); backdrop-filter: blur(12px); z-index: 2; }
         tr:hover td { background: rgba(255, 255, 255, 0.05); }
@@ -225,6 +230,7 @@
         <div class="nav-item" onclick="switchView('calendar')"><i class="fa-regular fa-calendar-days"></i> Financial Calendar</div>
         <div class="nav-item" onclick="switchView('orgHierarchy')"><i class="fa-solid fa-sitemap"></i> Organization Hierarchy</div>
         <div class="nav-item" onclick="switchView('auditLogs')"><i class="fa-solid fa-list-check"></i> Audit Logs</div>
+        <div class="nav-item" id="navItemSearchResults" style="display: none;" onclick="switchView('searchResults')"><i class="fa-solid fa-magnifying-glass"></i> Search Results</div>
         
         <div class="sidebar-bottom">
             <button class="btn btn-danger" style="width: 100%; justify-content: center;" onclick="resetApp()">
@@ -234,6 +240,32 @@
     </div>
 
     <div class="main-content">
+        <!-- Top Navbar -->
+        <div class="top-navbar glass" style="display: flex; justify-content: flex-end; align-items: center; padding: 12px 24px; margin-bottom: 24px; border-radius: 12px; position: relative; z-index: 100;">
+            <div style="width: 350px; position: relative;">
+                <div class="filter-container" style="margin: 0; background: rgba(0,0,0,0.5); border-radius: 8px; border: 1px solid var(--border-color); padding: 8px 12px; display: flex; align-items: center;">
+                    <i class="fa-solid fa-magnifying-glass" style="color: var(--text-secondary);"></i>
+                    <input type="text" id="globalSearchInput" placeholder="Search ( / )" style="background: transparent; border: none; color: white; width: 100%; outline: none; margin-left: 10px; font-size: 14px;" onkeyup="handleGlobalSearch(event)" onfocus="handleGlobalSearch(event)" onblur="setTimeout(()=>document.getElementById('globalSearchDropdown').style.display='none', 200)">
+                </div>
+                <div id="globalSearchDropdown" class="autocomplete-items" style="display: none; border-radius: 8px; margin-top: 5px; max-height: 400px; background: rgba(20, 25, 30, 0.98); box-shadow: 0 10px 40px rgba(0,0,0,0.6); z-index: 9999;"></div>
+            </div>
+        </div>
+
+        <!-- Search Results View -->
+        <div id="searchResultsView" class="view">
+            <div class="header"><h1 id="searchResultTitle">Search Results</h1></div>
+            <div class="card glass">
+                <div class="table-container">
+                    <table id="tableSearchResults">
+                        <thead>
+                            <tr><th>Match Score</th><th>Category</th><th>Record Details</th><th>Match Context</th><th>Action</th></tr>
+                        </thead>
+                        <tbody id="searchResultsBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <!-- Global Dashboard -->
         <div id="dashboardView" class="view active">
             <div class="header"><h1>Global Overview</h1></div>
@@ -285,6 +317,9 @@
             <div class="card glass" style="margin-bottom: 24px;">
                 <div class="flex-between">
                     <h3>Site Wise Breakdown</h3>
+                    <div class="filter-container">
+                        <input type="text" id="search_tableGlob" class="form-control filter-select" placeholder="Search..." oninput="filterTable('tableGlob')" style="width:120px;">
+                    </div>
                     <button class="btn btn-export" onclick="exportTableToExcel('tableGlob', 'Global_Dashboard')"><i class="fa-solid fa-file-excel"></i> Export</button>
                 </div>
                 <div class="table-container">
@@ -334,7 +369,13 @@
                         <div class="form-group"><label>Company Name</label><input type="text" id="companyName" class="form-control" required></div>
                         <div style="display:flex;gap:10px;"><button type="submit" class="btn btn-primary" id="btn_company">Save</button><button type="button" class="btn btn-danger" onclick="cancelEdit('company')" style="display:none;" id="cancel_company">Cancel</button></div>
                     </form>
-                    <div class="flex-between" style="margin-top:20px;"><h4>Companies</h4><button class="btn btn-export" onclick="exportTableToExcel('tableComp', 'Companies', 'companies')"><i class="fa-solid fa-file-excel"></i> Export</button></div>
+                    <div class="flex-between" style="margin-top:20px;">
+                        <h4>Companies</h4>
+                        <div class="filter-container">
+                            <input type="text" id="search_tableComp" class="form-control filter-select" placeholder="Search..." oninput="filterTable('tableComp')" style="width:120px;">
+                        </div>
+                        <button class="btn btn-export" onclick="exportTableToExcel('tableComp', 'Companies', 'companies')"><i class="fa-solid fa-file-excel"></i> Export</button>
+                    </div>
                     <div class="table-container"><table id="tableComp"><thead><tr><th>Company</th><th>Action</th></tr></thead><tbody id="compTableBody"></tbody></table></div>
                 </div>
                 <div class="card glass">
@@ -345,7 +386,13 @@
                         <div class="form-group"><label>Department Name of Site</label><input type="text" id="managerName" class="form-control" required></div>
                         <div style="display:flex;gap:10px;"><button type="submit" class="btn btn-primary" id="btn_site">Save</button><button type="button" class="btn btn-danger" onclick="cancelEdit('site')" style="display:none;" id="cancel_site">Cancel</button></div>
                     </form>
-                    <div class="flex-between" style="margin-top:20px;"><h4>Sites</h4><button class="btn btn-export" onclick="exportTableToExcel('tableSite', 'Sites', 'sites')"><i class="fa-solid fa-file-excel"></i> Export</button></div>
+                    <div class="flex-between" style="margin-top:20px;">
+                        <h4>Sites</h4>
+                        <div class="filter-container">
+                            <input type="text" id="search_tableSite" class="form-control filter-select" placeholder="Search..." oninput="filterTable('tableSite')" style="width:120px;">
+                        </div>
+                        <button class="btn btn-export" onclick="exportTableToExcel('tableSite', 'Sites', 'sites')"><i class="fa-solid fa-file-excel"></i> Export</button>
+                    </div>
                     <div class="table-container"><table id="tableSite"><thead><tr><th>Company</th><th>Site</th><th>Department</th><th>Action</th></tr></thead><tbody id="sitesTableBody"></tbody></table></div>
                 </div>
             </div>
@@ -368,14 +415,21 @@
                     <div class="card glass">
                         <h3 id="formTitle_corpExpenses" style="margin-bottom: 15px;">Add Corporate Expense</h3>
                         <form id="corpExpenseForm">
-                            <div class="form-row"><div class="form-group"><label>Date</label><input type="date" id="cExpDate" class="form-control" required></div><div class="form-group"><label>Payment</label><select id="cExpPayType" class="form-control" required><option value="Account">Account</option><option value="Cash">Cash</option></select></div></div>
+                            <div class="form-row"><div class="form-group"><label>Date</label><input type="date" id="cExpDate" class="form-control" required></div><div class="form-group"><label>Payment</label><div class="radio-group"><label><input type="radio" name="cExpPayType" value="Account" required checked> Account</label><label><input type="radio" name="cExpPayType" value="Cash"> Cash</label></div></div></div>
                             <div class="form-group"><label>Description</label><input type="text" id="cExpDesc" class="form-control" required></div>
                             <div class="form-group"><label>Amount (₹)</label><input type="text" id="cExpAmount" class="form-control amt-input" required placeholder="0.00"></div>
                             <div style="display:flex;gap:10px;"><button type="submit" class="btn btn-primary" id="btn_corpExpenses">Save</button><button type="button" class="btn btn-danger" onclick="cancelEdit('corpExpenses')" style="display:none;" id="cancel_corpExpenses">Cancel</button></div>
                         </form>
                     </div>
                     <div class="card glass">
-                        <div class="flex-between"><h4>Corporate Expense Log</h4><button class="btn btn-export" onclick="exportTableToExcel('tableCorp', 'Corp_Expenses', 'corpExpenses')"><i class="fa-solid fa-file-excel"></i> Export</button></div>
+                        <div class="flex-between">
+                            <h4>Corporate Expense Log</h4>
+                            <div class="filter-container">
+                                <input type="text" id="search_tableCorp" class="form-control filter-select" placeholder="Search..." oninput="filterTable('tableCorp')" style="width:120px;">
+                                <select id="filter_cExp_payType" class="form-control filter-select" onchange="filterTable('tableCorp')"><option value="">All Payments</option><option value="Account">Account</option><option value="Cash">Cash</option></select>
+                            </div>
+                            <button class="btn btn-export" onclick="exportTableToExcel('tableCorp', 'Corp_Expenses', 'corpExpenses')"><i class="fa-solid fa-file-excel"></i> Export</button>
+                        </div>
                         <div class="table-container"><table id="tableCorp"><thead><tr><th>Date</th><th>Desc</th><th>Payment Type</th><th>Amount</th><th>Action</th></tr></thead><tbody id="cExpTableBody"></tbody></table></div>
                     </div>
                 </div>
@@ -390,9 +444,10 @@
             <div class="selector-bar"><i class="fa-solid fa-filter" style="color: var(--accent-primary);"></i><strong>Select Site:</strong><select id="activeSiteSelect" class="form-control" onchange="refreshSiteDashboard()"></select></div>
 
             <div id="siteContentWrapper" style="display: none;">
-                <div class="dashboard-grid" style="grid-template-columns: repeat(2, 1fr);">
+                <div class="dashboard-grid" style="grid-template-columns: repeat(3, 1fr);">
                     <div class="card glass" style="border-left: 4px solid var(--success);"><div class="card-header"><span class="card-title">Available Cash</span></div><div class="card-value currency positive" id="siteCash">₹0</div></div>
                     <div class="card glass" style="border-left: 4px solid var(--orange);"><div class="card-header"><span class="card-title">Locked Receivables (EMD + RM)</span></div><div class="card-value currency highlight-orange" id="siteLocked">₹0</div></div>
+                    <div class="card glass" style="border-left: 4px solid var(--purple);"><div class="card-header"><span class="card-title">Personal Tx Net</span></div><div class="card-value currency highlight-purple" id="sitePtxNet">₹0</div></div>
                 </div>
 
                 <div class="card glass">
@@ -401,6 +456,7 @@
                         <div class="site-tab" onclick="switchSiteTab('expenses')">Vendors & Expenses</div>
                         <div class="site-tab" onclick="switchSiteTab('emd')">Tender EMD</div>
                         <div class="site-tab" onclick="switchSiteTab('rabills')">RA Bills</div>
+                        <div class="site-tab" onclick="switchSiteTab('personalTx')">Personal Transactions</div>
                     </div>
 
                     <div id="tab-partners" class="site-tab-content active">
@@ -408,20 +464,29 @@
                             <div>
                                 <h3 id="formTitle_partnerTx" style="margin-bottom: 15px;">Add Transaction</h3>
                                 <form id="partnerTxForm">
-                                    <div class="form-row"><div class="form-group"><label>Date</label><input type="date" id="ptDate" class="form-control" required></div><div class="form-group"><label>Payment Type</label><select id="ptPayType" class="form-control" required><option value="Account">Account</option><option value="Cash">Cash</option></select></div></div>
+                                    <div class="form-row"><div class="form-group"><label>Date</label><input type="date" id="ptDate" class="form-control" required></div><div class="form-group"><label>Payment Type</label><div class="radio-group"><label><input type="radio" name="ptPayType" value="Account" required checked> Account</label><label><input type="radio" name="ptPayType" value="Cash"> Cash</label></div></div></div>
                                     <div class="form-group autocomplete-wrapper">
                                         <label>Partner Name</label>
                                         <input type="text" id="ptName" class="form-control" required autocomplete="off">
                                         <div id="partnerAutocompleteList" class="autocomplete-items" style="display:none;"></div>
                                     </div>
                                     <div class="form-group"><label>Description / Details</label><input type="text" id="ptDesc" class="form-control" required></div>
-                                    <div class="form-group"><label>Type</label><select id="ptType" class="form-control" required><option value="invest">Invest</option><option value="withdraw">Withdraw</option></select></div>
+                                    <div class="form-group"><label>Type</label><div class="radio-group"><label><input type="radio" name="ptType" value="invest" required checked> Invest</label><label><input type="radio" name="ptType" value="withdraw"> Withdraw</label></div></div>
                                     <div class="form-group"><label>Amount (₹)</label><input type="text" id="ptAmount" class="form-control amt-input" required placeholder="0.00"></div>
                                     <div style="display:flex;gap:10px;"><button type="submit" class="btn btn-primary" id="btn_partnerTx">Save</button><button type="button" class="btn btn-danger" onclick="cancelEdit('partnerTx')" style="display:none;" id="cancel_partnerTx">Cancel</button></div>
                                 </form>
                             </div>
                             <div>
-                                <div class="flex-between"><h4>Transactions</h4><button class="btn btn-export" onclick="exportTableToExcel('tablePt', 'Partner_Transactions', 'partnerTx')"><i class="fa-solid fa-file-excel"></i> Export</button></div>
+                                <div class="flex-between">
+                                    <h4>Transactions</h4>
+                                    <div class="filter-container">
+                                        <input type="text" id="search_tablePt" class="form-control filter-select" placeholder="Search..." oninput="filterTable('tablePt')" style="width:120px;">
+                                        <select id="filter_pt_partner" class="form-control filter-select" onchange="filterTable('tablePt')"><option value="">All Partners</option></select>
+                                        <select id="filter_pt_type" class="form-control filter-select" onchange="filterTable('tablePt')"><option value="">All Types</option><option value="invest">Invest</option><option value="withdraw">Withdraw</option></select>
+                                        <select id="filter_pt_payType" class="form-control filter-select" onchange="filterTable('tablePt')"><option value="">All Payments</option><option value="Account">Account</option><option value="Cash">Cash</option></select>
+                                    </div>
+                                    <button class="btn btn-export" onclick="exportTableToExcel('tablePt', 'Partner_Transactions', 'partnerTx')"><i class="fa-solid fa-file-excel"></i> Export</button>
+                                </div>
                                 <div class="table-container"><table id="tablePt"><thead><tr><th>Date</th><th>Partner</th><th>Desc</th><th>Type</th><th>Pay Type</th><th>Amount</th><th>Action</th></tr></thead><tbody id="ptTableBody"></tbody></table></div>
                             </div>
                         </div>
@@ -448,10 +513,25 @@
                                 </form>
                             </div>
                             <div>
-                                <div class="flex-between"><h4>Vendor Ledger Entries</h4><button class="btn btn-export" onclick="exportTableToExcel('tableExp', 'Site_Expenses', 'expenses')"><i class="fa-solid fa-file-excel"></i> Export</button></div>
+                                <div class="flex-between">
+                                    <h4>Vendor Ledger Entries</h4>
+                                    <div class="filter-container">
+                                        <input type="text" id="search_tableExp" class="form-control filter-select" placeholder="Search..." oninput="filterTable('tableExp')" style="width:120px;">
+                                        <select id="filter_exp_vendor" class="form-control filter-select" onchange="filterTable('tableExp')"><option value="">All Vendors</option></select>
+                                        <select id="filter_exp_type" class="form-control filter-select" onchange="filterTable('tableExp')"><option value="">All Types</option><option value="bill">Bill</option><option value="pay_given">Pay Out</option><option value="advance_given">Advance</option><option value="pay_received">Pay In</option></select>
+                                    </div>
+                                    <button class="btn btn-export" onclick="exportTableToExcel('tableExp', 'Site_Expenses', 'expenses')"><i class="fa-solid fa-file-excel"></i> Export</button>
+                                </div>
                                 <div class="table-container" style="max-height: 250px;"><table id="tableExp"><thead><tr><th>Date</th><th>Vendor</th><th>Type</th><th>Desc</th><th>Amount</th><th>Action</th></tr></thead><tbody id="expTableBody"></tbody></table></div>
 
-                                <div class="flex-between" style="margin-top: 20px;"><h4>Vendor Balances</h4><button class="btn btn-export" onclick="exportTableToExcel('tableBal', 'Vendor_Balances')"><i class="fa-solid fa-file-excel"></i> Export</button></div>
+                                <div class="flex-between" style="margin-top: 20px;">
+                                    <h4>Vendor Balances</h4>
+                                    <div class="filter-container">
+                                        <input type="text" id="search_tableBal" class="form-control filter-select" placeholder="Search..." oninput="filterTable('tableBal')" style="width:120px;">
+                                        <select id="filter_bal_status" class="form-control filter-select" onchange="filterTable('tableBal')"><option value="">All Status</option><option value="Owe">Owe</option><option value="Advance">Advance</option><option value="Settled">Settled</option></select>
+                                    </div>
+                                    <button class="btn btn-export" onclick="exportTableToExcel('tableBal', 'Vendor_Balances')"><i class="fa-solid fa-file-excel"></i> Export</button>
+                                </div>
                                 <div class="table-container" style="max-height: 200px;">
                                     <table id="tableBal">
                                         <thead><tr><th>Vendor Name</th><th>Total Billed</th><th>Total Paid Out</th><th>Current Owe Status</th></tr></thead>
@@ -477,7 +557,14 @@
                                 </form>
                             </div>
                             <div>
-                                <div class="flex-between"><h4>EMD Records</h4><button class="btn btn-export" onclick="exportTableToExcel('tableEmd', 'EMD_Records', 'emd')"><i class="fa-solid fa-file-excel"></i> Export</button></div>
+                                <div class="flex-between">
+                                    <h4>EMD Records</h4>
+                                    <div class="filter-container">
+                                        <input type="text" id="search_tableEmd" class="form-control filter-select" placeholder="Search..." oninput="filterTable('tableEmd')" style="width:120px;">
+                                        <select id="filter_emd_status" class="form-control filter-select" onchange="filterTable('tableEmd')"><option value="">All Status</option><option value="Pending">Pending</option><option value="Converted">Converted</option><option value="Refunded">Refunded</option><option value="Forfeited">Forfeited</option></select>
+                                    </div>
+                                    <button class="btn btn-export" onclick="exportTableToExcel('tableEmd', 'EMD_Records', 'emd')"><i class="fa-solid fa-file-excel"></i> Export</button>
+                                </div>
                                 <div class="table-container"><table id="tableEmd"><thead><tr><th>Date</th><th>Ref</th><th>Pay Type</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead><tbody id="emdTableBody"></tbody></table></div>
                             </div>
                         </div>
@@ -502,8 +589,46 @@
                                 </form>
                             </div>
                             <div>
-                                <div class="flex-between"><h4>RA Bills</h4><button class="btn btn-export" onclick="exportTableToExcel('tableBill', 'RA_Bills', 'bills')"><i class="fa-solid fa-file-excel"></i> Export</button></div>
+                                <div class="flex-between">
+                                    <h4>RA Bills</h4>
+                                    <div class="filter-container">
+                                        <input type="text" id="search_tableBill" class="form-control filter-select" placeholder="Search..." oninput="filterTable('tableBill')" style="width:120px;">
+                                        <select id="filter_bill_status" class="form-control filter-select" onchange="filterTable('tableBill')"><option value="">All Status</option><option value="Locked">Locked</option><option value="Released">Released</option></select>
+                                    </div>
+                                    <button class="btn btn-export" onclick="exportTableToExcel('tableBill', 'RA_Bills', 'bills')"><i class="fa-solid fa-file-excel"></i> Export</button>
+                                </div>
                                 <div class="table-container"><table id="tableBill"><thead><tr><th>Date</th><th>Ref</th><th>Gross</th><th>RM (Ret)</th><th>Net Rcvd</th><th>Alloc to Site</th><th>Corp Retained</th><th>RM Status</th><th>Action</th></tr></thead><tbody id="billTableBody"></tbody></table></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="tab-personalTx" class="site-tab-content">
+                        <div class="two-col">
+                            <div>
+                                <h3 id="formTitle_personalTx" style="margin-bottom: 15px;">Log Personal Transaction</h3>
+                                <form id="personalTxForm" class="biz-form">
+                                    <div class="form-group"><label>Transaction Type</label><div class="radio-group"><label><input type="radio" name="ptxType" value="Debit" required checked> Debit</label><label><input type="radio" name="ptxType" value="Credit"> Credit</label></div></div>
+                                    <div class="form-group autocomplete-wrapper">
+                                        <label>Company Name</label>
+                                        <input type="text" id="ptxCompany" class="form-control" required autocomplete="off">
+                                        <div id="ptxCompanyAutocompleteList" class="autocomplete-items" style="display:none;"></div>
+                                    </div>
+                                    <div class="form-group"><label>Description</label><input type="text" id="ptxDesc" class="form-control" required></div>
+                                    <div class="form-group"><label>Amount</label><input type="text" id="ptxAmount" class="form-control amt-input" required placeholder="0.00"></div>
+                                    <div style="display:flex;gap:10px;"><button type="submit" class="btn btn-primary" id="btn_personalTx">Submit</button><button type="button" class="btn btn-danger" onclick="cancelEdit('personalTx')" style="display:none;" id="cancel_personalTx">Cancel</button></div>
+                                </form>
+                            </div>
+                            <div>
+                                <div class="flex-between">
+                                    <h4>Personal Transactions</h4>
+                                    <div class="filter-container">
+                                        <input type="text" id="search_tablePtx" class="form-control filter-select" placeholder="Search..." oninput="filterTable('tablePtx')" style="width:120px;">
+                                        <select id="filter_ptx_company" class="form-control filter-select" onchange="filterTable('tablePtx')"><option value="">All Companies</option></select>
+                                        <select id="filter_ptx_type" class="form-control filter-select" onchange="filterTable('tablePtx')"><option value="">All Types</option><option value="Debit">Debit</option><option value="Credit">Credit</option></select>
+                                    </div>
+                                    <button class="btn btn-export" onclick="exportTableToExcel('tablePtx', 'Personal_Transactions', 'personalTx')"><i class="fa-solid fa-file-excel"></i> Export</button>
+                                </div>
+                                <div class="table-container"><table id="tablePtx"><thead><tr><th>Company</th><th>Type</th><th>Description</th><th>Amount</th><th>Action</th></tr></thead><tbody id="ptxTableBody"></tbody></table></div>
                             </div>
                         </div>
                     </div>
@@ -532,9 +657,12 @@
             <div class="card glass">
                 <div class="flex-between" style="margin-bottom: 20px;">
                     <div><h3 style="margin: 0; color: var(--text-primary);">System Activity</h3><div style="font-size:13px; color:var(--text-secondary);">Tracking all creates, edits, and deletes.</div></div>
+                    <div class="filter-container">
+                        <input type="text" id="search_tableAudit" class="form-control filter-select" placeholder="Search..." oninput="filterTable('tableAudit')" style="width:120px;">
+                    </div>
                 </div>
                 <div style="overflow-x: auto;">
-                    <table class="audit-table">
+                    <table class="audit-table" id="tableAudit">
                         <thead>
                             <tr>
                                 <th>Timestamp</th>
@@ -556,7 +684,7 @@
     </div>
 
     <script>
-        let appData = { companies: [], sites: [], partnerTx: [], expenses: [], emd: [], bills: [], corpExpenses: [], auditLogs: [] };
+        let appData = { companies: [], sites: [], partnerTx: [], expenses: [], emd: [], bills: [], corpExpenses: [], auditLogs: [], personalTx: [] };
         let editState = { col: null, id: null };
         const STORAGE_KEY = 'bizflow_data_v6';
 
@@ -566,7 +694,7 @@
                 try {
                     const parsed = JSON.parse(savedData);
                     appData = { ...appData, ...parsed };
-                    ['companies', 'sites', 'partnerTx', 'expenses', 'emd', 'bills', 'corpExpenses', 'auditLogs'].forEach(k => {
+                    ['companies', 'sites', 'partnerTx', 'expenses', 'emd', 'bills', 'corpExpenses', 'auditLogs', 'personalTx'].forEach(k => {
                         if(!appData[k]) appData[k] = [];
                     });
                 } catch(e) { console.error("Error parsing savedData:", e); }
@@ -576,6 +704,7 @@
             
             setupAutocomplete('ptName', 'partnerAutocompleteList', () => [...new Set(appData.partnerTx.map(x => x.name).filter(Boolean))]);
             setupAutocomplete('expVendor', 'vendorAutocompleteList', () => [...new Set(appData.expenses.map(x => x.vendor).filter(Boolean))]);
+            setupAutocomplete('ptxCompany', 'ptxCompanyAutocompleteList', () => [...new Set(appData.personalTx.map(x => x.company).filter(Boolean))]);
         }
         
         function setupAutocomplete(inputId, listId, dataGetter) {
@@ -662,6 +791,7 @@
             if(col === 'expenses') document.getElementById('expenseForm').reset();
             if(col === 'emd') document.getElementById('emdForm').reset();
             if(col === 'bills') document.getElementById('billForm').reset();
+            if(col === 'personalTx') document.getElementById('personalTxForm').reset();
             if(col === 'corpExpenses') document.getElementById('corpExpenseForm').reset();
             setToday();
         }
@@ -674,11 +804,12 @@
 
             if(col === 'company') { document.getElementById('companyName').value = obj.name; }
             if(col === 'site') { document.getElementById('siteCompanyId').value = obj.companyId; document.getElementById('siteName').value = obj.location; document.getElementById('managerName').value = obj.manager; }
-            if(col === 'partnerTx') { document.getElementById('ptDate').value = obj.date; document.getElementById('ptPayType').value = obj.payType; document.getElementById('ptName').value = obj.name; document.getElementById('ptDesc').value = obj.desc || ''; document.getElementById('ptType').value = obj.type; document.getElementById('ptAmount').value = formatNum(obj.amount); }
+            if(col === 'partnerTx') { document.getElementById('ptDate').value = obj.date; document.querySelector(`input[name="ptPayType"][value="${obj.payType}"]`).checked = true; document.getElementById('ptName').value = obj.name; document.getElementById('ptDesc').value = obj.desc || ''; document.querySelector(`input[name="ptType"][value="${obj.type}"]`).checked = true; document.getElementById('ptAmount').value = formatNum(obj.amount); }
             if(col === 'expenses') { document.getElementById('expDate').value = obj.date; document.getElementById('expPayType').value = obj.payType; document.getElementById('expVendor').value = obj.vendor || ''; document.getElementById('expTxType').value = obj.txType || 'bill'; document.getElementById('expDesc').value = obj.desc; document.getElementById('expAmount').value = formatNum(obj.amount); }
             if(col === 'emd') { document.getElementById('emdDate').value = obj.date; document.getElementById('emdPayType').value = obj.payType; document.getElementById('emdDesc').value = obj.desc; document.getElementById('emdAmount').value = formatNum(obj.amount); document.getElementById('emdReleaseDate').value = obj.releaseDate || ''; }
             if(col === 'bills') { document.getElementById('billDate').value = obj.date; document.getElementById('billPayType').value = obj.payType; document.getElementById('billDesc').value = obj.desc; document.getElementById('billGross').value = formatNum(obj.gross); document.getElementById('billRM').value = formatNum(obj.rm); document.getElementById('billTds').value = formatNum(obj.tds || 0); document.getElementById('billAdvRec').value = formatNum(obj.advRec || 0); document.getElementById('billDed').value = formatNum(obj.ded); document.getElementById('billAlloc').value = formatNum(obj.alloc); document.getElementById('billRmRelease').value = obj.rmReleaseDate || ''; }
-            if(col === 'corpExpenses') { document.getElementById('cExpDate').value = obj.date; document.getElementById('cExpPayType').value = obj.payType; document.getElementById('cExpDesc').value = obj.desc; document.getElementById('cExpAmount').value = formatNum(obj.amount); }
+            if(col === 'personalTx') { document.querySelector(`input[name="ptxType"][value="${obj.type}"]`).checked = true; document.getElementById('ptxCompany').value = obj.company; document.getElementById('ptxDesc').value = obj.desc; document.getElementById('ptxAmount').value = formatNum(obj.amount); }
+            if(col === 'corpExpenses') { document.getElementById('cExpDate').value = obj.date; document.querySelector(`input[name="cExpPayType"][value="${obj.payType}"]`).checked = true; document.getElementById('cExpDesc').value = obj.desc; document.getElementById('cExpAmount').value = formatNum(obj.amount); }
         }
 
         function editEntry(col, id) {
@@ -742,6 +873,155 @@
         }
         function getAmt(id) { return parseInputToFloat(document.getElementById(id).value); }
 
+        function handleGlobalSearch(e) {
+            const query = e.target.value.toLowerCase().trim();
+            const dropdown = document.getElementById('globalSearchDropdown');
+            
+            if(!query) {
+                if(dropdown) dropdown.style.display = 'none';
+                return;
+            }
+            
+            if (e.key === 'Enter') {
+                if(dropdown) dropdown.style.display = 'none';
+                executeGlobalSearch(query);
+                return;
+            }
+            
+            const results = _getGlobalSearchResults(query);
+            
+            if(dropdown) {
+                if (results.length === 0) {
+                    dropdown.innerHTML = '<div style="padding: 10px; color: var(--text-secondary); text-align: center;">No results found</div>';
+                } else {
+                    dropdown.innerHTML = results.slice(0, 8).map(r => {
+                        return `<div onmousedown="goToSearchResult('${r.type}', '${r.id}', '${r.siteId||''}', '${r.compId||''}')">
+                            <div style="display:flex; justify-content:space-between;">
+                                <strong>${r.desc.length > 35 ? r.desc.substring(0, 35) + '...' : r.desc}</strong>
+                                <span class="cal-badge badge-partner" style="font-size:10px;">${r.cat}</span>
+                            </div>
+                        </div>`;
+                    }).join('');
+                    if (results.length > 8) {
+                        dropdown.innerHTML += `<div style="text-align:center; color: var(--accent-primary); padding: 8px; border-top: 1px solid rgba(255,255,255,0.1);" onmousedown="executeGlobalSearch('${query}')">View all ${results.length} results <i class="fa-solid fa-arrow-right"></i></div>`;
+                    }
+                }
+                dropdown.style.display = 'block';
+            }
+        }
+        
+        function _getGlobalSearchResults(query) {
+            const results = [];
+            
+            // Search Companies
+            appData.companies.forEach(c => {
+                const matchString = JSON.stringify(c).toLowerCase();
+                if(matchString.includes(query)) results.push({ type: 'company', id: c.id, cat: 'Company', desc: c.name, compId: c.id, score: 98 });
+            });
+            // Search Sites
+            appData.sites.forEach(s => {
+                const matchString = JSON.stringify(s).toLowerCase();
+                if(matchString.includes(query)) results.push({ type: 'site', id: s.id, cat: 'Site', desc: s.location + ' - ' + s.manager, compId: s.companyId, siteId: s.id, score: 95 });
+            });
+            // Corporate Expenses
+            appData.corpExpenses.forEach(x => {
+                const matchString = JSON.stringify(x).toLowerCase();
+                if(matchString.includes(query)) results.push({ type: 'corpExp', id: x.id, cat: 'Corp Exp', desc: `${x.date} | ${x.desc} | ₹${x.amount}`, compId: x.compId, score: 85 });
+            });
+            // Partner Tx
+            appData.partnerTx.forEach(x => {
+                const matchString = JSON.stringify(x).toLowerCase();
+                if(matchString.includes(query)) results.push({ type: 'partnerTx', id: x.id, cat: 'Partner Tx', desc: `${x.name} | ${x.type} | ₹${x.amount}`, siteId: x.siteId, score: 80 });
+            });
+            // Expenses (Vendor Ledger)
+            appData.expenses.forEach(x => {
+                const matchString = JSON.stringify(x).toLowerCase();
+                if(matchString.includes(query)) results.push({ type: 'expenses', id: x.id, cat: 'Vendor Tx', desc: `${x.vendor} | ${x.txType} | ₹${x.amount}`, siteId: x.siteId, score: 80 });
+            });
+            // EMD
+            appData.emd.forEach(x => {
+                const matchString = JSON.stringify(x).toLowerCase();
+                if(matchString.includes(query)) results.push({ type: 'emd', id: x.id, cat: 'EMD', desc: `Status: ${x.status} | ₹${x.amount}`, siteId: x.siteId, score: 80 });
+            });
+            // Bills
+            appData.bills.forEach(x => {
+                const matchString = JSON.stringify(x).toLowerCase();
+                if(matchString.includes(query)) results.push({ type: 'bills', id: x.id, cat: 'RA Bill', desc: `Net: ₹${x.net} | Ret: ₹${x.rm}`, siteId: x.siteId, score: 80 });
+            });
+            // Personal Tx
+            if(appData.personalTx) appData.personalTx.forEach(x => {
+                const matchString = JSON.stringify(x).toLowerCase();
+                if(matchString.includes(query)) results.push({ type: 'personalTx', id: x.id, cat: 'Personal', desc: `${x.company} | ${x.type} | ₹${x.amount}`, siteId: x.siteId, score: 80 });
+            });
+
+            // Deduplicate by ID to ensure unique results
+            const uniqueResults = [];
+            const seenIds = new Set();
+            for (const r of results) {
+                if (!seenIds.has(r.id)) {
+                    seenIds.add(r.id);
+                    uniqueResults.push(r);
+                }
+            }
+
+            uniqueResults.sort((a,b) => b.score - a.score);
+            return uniqueResults;
+        }
+
+        function executeGlobalSearch(query) {
+            const results = _getGlobalSearchResults(query);
+
+            const tbody = document.getElementById('searchResultsBody');
+            if (results.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">No results found.</td></tr>';
+            } else {
+                tbody.innerHTML = results.map((r, i) => {
+                    const rScore = (r.score + (Math.random() * 5)).toFixed(1);
+                    const btn = `<button class="btn btn-primary" onclick="goToSearchResult('${r.type}', '${r.id}', '${r.siteId||''}', '${r.compId||''}')"><i class="fa-solid fa-arrow-up-right-from-square"></i> Go</button>`;
+                    return `<tr id="row-${r.id}">
+                        <td style="color:var(--success); font-weight:bold;">${rScore}%</td>
+                        <td><span class="cal-badge badge-partner">${r.cat}</span></td>
+                        <td><strong>${r.desc}</strong></td>
+                        <td><span style="color:var(--text-secondary); font-size: 12px;">ID: ${r.id.substring(0,8)}</span></td>
+                        <td style="text-align:right;">${btn}</td>
+                    </tr>`;
+                }).join('');
+            }
+
+            document.getElementById('navItemSearchResults').style.display = 'block';
+            document.getElementById('searchResultTitle').textContent = `Search Results (${results.length})`;
+            switchView('searchResults');
+        }
+
+        function goToSearchResult(type, id, siteId, compId) {
+            const dropdown = document.getElementById('globalSearchDropdown');
+            if (dropdown) dropdown.style.display = 'none';
+
+            if (type === 'company' || type === 'site') {
+                switchView('setup');
+                highlightRow(id);
+            } else if (type === 'corpExp') {
+                document.getElementById('activeCompanySelect').value = compId;
+                switchView('companyDashboard');
+                refreshCompanyDashboard();
+                highlightRow(id);
+            } else {
+                if(siteId) {
+                    document.getElementById('activeSiteSelect').value = siteId;
+                    switchView('siteDashboard');
+                    refreshSiteDashboard();
+                    
+                    if (type === 'partnerTx') switchSiteTab('partners');
+                    else if (type === 'expenses') switchSiteTab('expenses');
+                    else if (type === 'emd') switchSiteTab('emd');
+                    else if (type === 'bills') switchSiteTab('rabills');
+                    else if (type === 'personalTx') switchSiteTab('personalTx');
+                    
+                    highlightRow(id);
+                }
+            }
+        }
+
         function switchView(viewId) {
             document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
@@ -791,6 +1071,7 @@
                     </td>
                 </tr>`;
             }).join('');
+            filterTable('tableAudit');
         }
 
         function showAuditModal(id) {
@@ -870,10 +1151,11 @@
                     refreshSiteDashboard();
                     
                     // switch to correct tab
-                    if(cat === 'partnerTx') switchSiteTab('partner');
+                    if(cat === 'partnerTx') switchSiteTab('partners');
                     if(cat === 'expenses') switchSiteTab('expenses');
                     if(cat === 'bills') switchSiteTab('rabills');
                     if(cat === 'emd') switchSiteTab('emd');
+                    if(cat === 'personalTx') switchSiteTab('personalTx');
                     
                     highlightRow(obj.id);
                     editEntry(cat, obj.id);
@@ -942,19 +1224,72 @@
             document.getElementById('tab-' + tabId).classList.add('active');
         }
 
+        function filterTable(tableId) {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+            const rows = Array.from(table.querySelectorAll('tbody tr'));
+            
+            const filters = Array.from(document.querySelectorAll(`select.filter-select[onchange*="'${tableId}'"]`)).map(select => ({
+                id: select.id,
+                value: select.value.toLowerCase()
+            }));
+            
+            const searchInput = document.getElementById(`search_${tableId}`);
+            const searchText = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+            rows.forEach(row => {
+                let isVisible = true;
+                filters.forEach(filter => {
+                    if (!filter.value || !isVisible) return; 
+                    
+                    let colIndex = -1;
+                    if (filter.id === 'filter_cExp_payType') colIndex = 2;
+                    else if (filter.id === 'filter_pt_partner') colIndex = 1;
+                    else if (filter.id === 'filter_pt_type') colIndex = 3;
+                    else if (filter.id === 'filter_pt_payType') colIndex = 4;
+                    else if (filter.id === 'filter_exp_vendor') colIndex = 1;
+                    else if (filter.id === 'filter_exp_type') colIndex = 2;
+                    else if (filter.id === 'filter_bal_status') colIndex = 3;
+                    else if (filter.id === 'filter_emd_status') colIndex = 4;
+                    else if (filter.id === 'filter_bill_status') colIndex = 7;
+                    else if (filter.id === 'filter_ptx_company') colIndex = 0;
+                    else if (filter.id === 'filter_ptx_type') colIndex = 1;
+
+                    if (colIndex >= 0 && row.cells[colIndex]) {
+                        const cellText = row.cells[colIndex].textContent.toLowerCase().trim();
+                        if (filter.id === 'filter_bal_status') {
+                            if (!cellText.includes(filter.value)) isVisible = false;
+                        } else {
+                            if (cellText !== filter.value && !cellText.includes(filter.value)) isVisible = false;
+                        }
+                    }
+                });
+                
+                if (isVisible && searchText) {
+                    const rowText = Array.from(row.cells).map(c => c.textContent.toLowerCase()).join(' ');
+                    if (!rowText.includes(searchText)) isVisible = false;
+                }
+                
+                row.style.display = isVisible ? '' : 'none';
+            });
+        }
+
         // Excel Export
         function exportTableToExcel(tableId, filename, dataType = null) {
             let wb;
             if (dataType && appData[dataType]) {
                  let data = appData[dataType];
-                 if (['partnerTx', 'expenses', 'emd', 'bills'].includes(dataType)) {
+                 if (['partnerTx', 'expenses', 'emd', 'bills', 'personalTx'].includes(dataType)) {
                       const siteId = getActiveSiteId();
                       if(siteId) data = data.filter(x => x.siteId === siteId);
                  } else if (dataType === 'corpExpenses') {
                       const compId = document.getElementById('activeCompanySelect').value;
                       if(compId) data = data.filter(x => x.compId === compId);
                  }
-                 let exportData = JSON.parse(JSON.stringify(data));
+                 
+                 const visibleRowIds = Array.from(document.querySelectorAll(`#${tableId} tbody tr:not([style*="display: none"])`)).map(tr => tr.id.replace('row-', ''));
+                 let exportData = JSON.parse(JSON.stringify(data)).filter(x => visibleRowIds.includes(String(x.id)));
+
                  exportData.forEach(row => {
                      if(row.date) {
                          const parts = row.date.split('-');
@@ -969,7 +1304,7 @@
                  XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
             } else {
                  const table = document.getElementById(tableId);
-                 wb = XLSX.utils.table_to_book(table, {sheet: "Sheet1"});
+                 wb = XLSX.utils.table_to_book(table, {sheet: "Sheet1", display: true});
                  formatWorksheet(wb.Sheets["Sheet1"]);
             }
             XLSX.writeFile(wb, filename + ".xlsx");
@@ -1021,7 +1356,7 @@
         
         document.getElementById('corpExpenseForm').addEventListener('submit', (e) => {
             e.preventDefault(); const compId = document.getElementById('activeCompanySelect').value; if(!compId) return alert("Select company");
-            saveOrUpdate('corpExpenses', { compId, date: document.getElementById('cExpDate').value, payType: document.getElementById('cExpPayType').value, desc: document.getElementById('cExpDesc').value, amount: getAmt('cExpAmount') });
+            saveOrUpdate('corpExpenses', { compId, date: document.getElementById('cExpDate').value, payType: document.querySelector('input[name="cExpPayType"]:checked').value, desc: document.getElementById('cExpDesc').value, amount: getAmt('cExpAmount') });
             e.target.reset(); setToday();
         });
 
@@ -1050,6 +1385,7 @@
             [...appData.companies].reverse().forEach(c => cBody.innerHTML += `<tr id="row-${c.id}"><td>${c.name}</td><td style="text-align: right; width: 120px;"><button class="btn-action" onclick="showRecordHistory('${c.id}')" title="History"><i class="fa-solid fa-clock-rotate-left"></i></button><button class="btn-action btn-edit" onclick="editEntry('company', '${c.id}')"><i class="fa-solid fa-pen"></i></button><button class="btn-action" onclick="deleteEntry('companies', '${c.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`);
             const sBody = document.getElementById('sitesTableBody'); sBody.innerHTML = '';
             [...appData.sites].reverse().forEach(s => { const comp = appData.companies.find(c => c.id === s.companyId); sBody.innerHTML += `<tr id="row-${s.id}"><td>${comp?comp.name:''}</td><td>${s.location}</td><td>${s.manager}</td><td style="text-align: right; width: 120px;"><button class="btn-action" onclick="showRecordHistory('${s.id}')" title="History"><i class="fa-solid fa-clock-rotate-left"></i></button><button class="btn-action btn-edit" onclick="editEntry('site', '${s.id}')"><i class="fa-solid fa-pen"></i></button><button class="btn-action" onclick="deleteEntry('sites', '${s.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`; });
+            ['tableComp', 'tableSite'].forEach(id => filterTable(id));
         }
 
         function toggleOrgSites(companyId) {
@@ -1088,6 +1424,7 @@
         function getEntityStats(siteId) {
             const partners = {};
             const vendors = {};
+            const ptxCompanies = {};
 
             appData.partnerTx.filter(tx => tx.siteId === siteId).forEach(tx => {
                 if(!partners[tx.name]) partners[tx.name] = { invested: 0, withdrawn: 0 };
@@ -1102,8 +1439,16 @@
                 else if(tx.txType === 'pay_received') vendors[tx.vendor].paid -= tx.amount;
                 else { vendors[tx.vendor].billed += tx.amount; vendors[tx.vendor].paid += tx.amount; }
             });
+            
+            if (appData.personalTx) {
+                appData.personalTx.filter(tx => tx.siteId === siteId).forEach(tx => {
+                    if(!ptxCompanies[tx.company]) ptxCompanies[tx.company] = { credit: 0, debit: 0 };
+                    if(tx.type === 'Credit') ptxCompanies[tx.company].credit += tx.amount;
+                    else ptxCompanies[tx.company].debit += tx.amount;
+                });
+            }
 
-            return { partners, vendors };
+            return { partners, vendors, ptxCompanies };
         }
 
         function renderOrgHierarchy() {
@@ -1162,6 +1507,7 @@
                         const sStats = calculateSiteStats(site.id);
                         const pNames = Object.keys(stats.partners);
                         const vNames = Object.keys(stats.vendors);
+                        const ptxNames = Object.keys(stats.ptxCompanies || {});
 
                         // List View: Site
                         listHtml += `
@@ -1174,11 +1520,13 @@
                                         <span style="color:var(--success)">Cash: ${formatCurrency(sStats.availableCash)}</span>
                                         <span style="color:var(--danger)">Exp: ${formatCurrency(sStats.exp)}</span>
                                         <span style="color:var(--orange)">Locked: ${formatCurrency(sStats.totalLocked)}</span>
+                                        <span style="color:var(--purple)">PTx Net: ${formatCurrency(sStats.ptxNet)}</span>
                                     </div>
                                 </div>
                                 <div style="display:flex; gap:10px; align-items:center;">
                                     <span class="badge badge-blue">${pNames.length} Partners</span>
                                     <span class="badge badge-warning">${vNames.length} Vendors</span>
+                                    <span class="badge badge-purple">${ptxNames.length} Personal</span>
                                     <button class="btn btn-export" onclick="event.stopPropagation(); document.getElementById('activeSiteSelect').value='${site.id}'; switchView('siteDashboard'); refreshSiteDashboard();">View</button>
                                 </div>
                             </div>
@@ -1200,6 +1548,15 @@
                                         <div class="org-fin-stats"><span style="color:var(--orange)">Bill: ${formatCurrency(vs.billed)}</span><span style="color:var(--success)">Paid: ${formatCurrency(vs.paid)}</span><span style="color:var(--danger)">Owe: ${formatCurrency(vs.billed - vs.paid)}</span></div>
                                     </div>`
                                 }).join('')}
+                                
+                                <h5 style="color: var(--purple); margin-top: 10px; margin-bottom: 5px; font-size: 12px; text-transform: uppercase;">Personal Transactions</h5>
+                                ${ptxNames.length === 0 ? '<div class="org-entity-item">No personal transactions recorded.</div>' : ptxNames.map(c => {
+                                    const cs = stats.ptxCompanies[c];
+                                    return `<div class="org-entity-item">
+                                        <div><i class="fa-solid fa-building-user" style="color: var(--purple);"></i> ${c}</div>
+                                        <div class="org-fin-stats"><span style="color:var(--success)">Cr: ${formatCurrency(cs.credit)}</span><span style="color:var(--danger)">Dr: ${formatCurrency(cs.debit)}</span><span style="color:var(--purple)">Net: ${formatCurrency(cs.credit - cs.debit)}</span></div>
+                                    </div>`
+                                }).join('')}
                             </div>
                         </div>
                         `;
@@ -1212,10 +1569,11 @@
                                 <div class="node-stat-row"><span>Site Cash:</span><span class="positive">${formatNum(sStats.availableCash)}</span></div>
                                 <div class="node-stat-row"><span>Total Exp:</span><span class="negative">${formatNum(sStats.exp)}</span></div>
                                 <div class="node-stat-row"><span>Locked:</span><span class="highlight-orange">${formatNum(sStats.totalLocked)}</span></div>
+                                <div class="node-stat-row"><span>PTx Net:</span><span style="color:var(--purple); font-weight:bold;">${formatNum(sStats.ptxNet)}</span></div>
                             </div>
                         </div>`;
                         
-                        if(pNames.length > 0 || vNames.length > 0) {
+                        if(pNames.length > 0 || vNames.length > 0 || ptxNames.length > 0) {
                             canvasHtml += `<ul>`;
                             pNames.forEach(p => {
                                 const ps = stats.partners[p];
@@ -1236,6 +1594,17 @@
                                         <div class="node-stat-row"><span>Bill:</span><span class="highlight-orange">${formatNum(vs.billed)}</span></div>
                                         <div class="node-stat-row"><span>Paid:</span><span class="positive">${formatNum(vs.paid)}</span></div>
                                         <div class="node-stat-row" style="font-weight:bold;"><span>Owe:</span><span class="negative">${formatNum(vs.billed - vs.paid)}</span></div>
+                                    </div>
+                                </div></li>`;
+                            });
+                            ptxNames.forEach(c => {
+                                const cs = stats.ptxCompanies[c];
+                                canvasHtml += `<li><div class="tree-node node-vendor" style="border-top-color: var(--purple);">
+                                    <div class="node-title"><i class="fa-solid fa-building-user" style="color:var(--purple)"></i> ${c}</div>
+                                    <div class="node-stats">
+                                        <div class="node-stat-row"><span>Cr:</span><span class="positive">${formatNum(cs.credit)}</span></div>
+                                        <div class="node-stat-row"><span>Dr:</span><span class="negative">${formatNum(cs.debit)}</span></div>
+                                        <div class="node-stat-row" style="font-weight:bold;"><span>Net:</span><span style="color:var(--purple)">${formatNum(cs.credit - cs.debit)}</span></div>
                                     </div>
                                 </div></li>`;
                             });
@@ -1260,7 +1629,7 @@
         // Transactions
         function getActiveSiteId() { return document.getElementById('activeSiteSelect').value; }
 
-        document.getElementById('partnerTxForm').addEventListener('submit', (e) => { e.preventDefault(); const siteId = getActiveSiteId(); if(!siteId) return alert("Select site"); saveOrUpdate('partnerTx', { siteId, date: document.getElementById('ptDate').value, payType: document.getElementById('ptPayType').value, name: document.getElementById('ptName').value, desc: document.getElementById('ptDesc').value, type: document.getElementById('ptType').value, amount: getAmt('ptAmount') }); e.target.reset(); setToday(); });
+        document.getElementById('partnerTxForm').addEventListener('submit', (e) => { e.preventDefault(); const siteId = getActiveSiteId(); if(!siteId) return alert("Select site"); saveOrUpdate('partnerTx', { siteId, date: document.getElementById('ptDate').value, payType: document.querySelector('input[name="ptPayType"]:checked').value, name: document.getElementById('ptName').value, desc: document.getElementById('ptDesc').value, type: document.querySelector('input[name="ptType"]:checked').value, amount: getAmt('ptAmount') }); e.target.reset(); setToday(); });
         document.getElementById('expenseForm').addEventListener('submit', (e) => { 
             e.preventDefault(); const siteId = getActiveSiteId(); if(!siteId) return alert("Select site"); 
             saveOrUpdate('expenses', { siteId, date: document.getElementById('expDate').value, payType: document.getElementById('expPayType').value, vendor: document.getElementById('expVendor').value, txType: document.getElementById('expTxType').value, desc: document.getElementById('expDesc').value, amount: getAmt('expAmount'), tds: getAmt('expTds') }); 
@@ -1272,6 +1641,12 @@
             e.preventDefault(); const siteId = getActiveSiteId(); if(!siteId) return alert("Select site");
             const gross = getAmt('billGross'), rm = getAmt('billRM'), tds = getAmt('billTds'), advRec = getAmt('billAdvRec'), ded = getAmt('billDed'), alloc = getAmt('billAlloc');
             saveOrUpdate('bills', { siteId, date: document.getElementById('billDate').value, payType: document.getElementById('billPayType').value, desc: document.getElementById('billDesc').value, gross, rm, tds, advRec, ded, net: gross - rm - tds - advRec - ded, alloc, rmReleaseDate: document.getElementById('billRmRelease').value });
+            e.target.reset(); setToday();
+        });
+
+        document.getElementById('personalTxForm').addEventListener('submit', (e) => {
+            e.preventDefault(); const siteId = getActiveSiteId(); if(!siteId) return alert("Select site");
+            saveOrUpdate('personalTx', { siteId, date: new Date().toISOString().split('T')[0], type: document.querySelector('input[name="ptxType"]:checked').value, company: document.getElementById('ptxCompany').value, desc: document.getElementById('ptxDesc').value, amount: getAmt('ptxAmount') });
             e.target.reset(); setToday();
         });
 
@@ -1317,9 +1692,17 @@
             
             appData.bills.filter(x => x.siteId === siteId).forEach(x => { billAllocatedToSite += x.alloc; if(!isReleased(x.rmReleaseDate)) { billRMLocked += x.rm; } });
             
+            let ptxNet = 0;
+            if(appData.personalTx) {
+                appData.personalTx.filter(x => x.siteId === siteId).forEach(x => {
+                    if (x.type === 'Credit') ptxNet += x.amount;
+                    else if (x.type === 'Debit') ptxNet -= x.amount;
+                });
+            }
+
             const totalLocked = emdLocked + billRMLocked;
-            const availableCash = netInv - cashOut + cashIn - emdLocked + billAllocatedToSite;
-            return { netInv, exp, totalLocked, billAllocatedToSite, availableCash, vendorBalances: vBal };
+            const availableCash = netInv - cashOut + cashIn - emdLocked + billAllocatedToSite + ptxNet;
+            return { netInv, exp, totalLocked, billAllocatedToSite, availableCash, vendorBalances: vBal, ptxNet };
         }
 
         function calculateCompanyStats(compId) {
@@ -1339,8 +1722,35 @@
             const stats = calculateSiteStats(siteId);
             document.getElementById('siteCash').textContent = formatCurrency(stats.availableCash);
             document.getElementById('siteLocked').textContent = formatCurrency(stats.totalLocked);
+            document.getElementById('sitePtxNet').textContent = formatCurrency(stats.ptxNet);
+            if (stats.ptxNet < 0) { document.getElementById('sitePtxNet').classList.add('negative'); document.getElementById('sitePtxNet').classList.remove('positive'); document.getElementById('sitePtxNet').classList.remove('highlight-purple'); }
+            else { document.getElementById('sitePtxNet').classList.add('positive'); document.getElementById('sitePtxNet').classList.remove('negative'); document.getElementById('sitePtxNet').classList.remove('highlight-purple'); }
 
-            ['pt','exp','emd','bill'].forEach(prefix => { document.getElementById(prefix+'TableBody').innerHTML = ''; });
+            const ptPartnerFilter = document.getElementById('filter_pt_partner');
+            if (ptPartnerFilter) {
+                const ptPartnerVal = ptPartnerFilter.value;
+                const partners = [...new Set(appData.partnerTx.filter(x => x.siteId === siteId && x.name).map(x => x.name))];
+                ptPartnerFilter.innerHTML = '<option value="">All Partners</option>' + partners.map(p => `<option value="${p}">${p}</option>`).join('');
+                ptPartnerFilter.value = ptPartnerVal;
+            }
+
+            const expVendorFilter = document.getElementById('filter_exp_vendor');
+            if (expVendorFilter) {
+                const expVendorVal = expVendorFilter.value;
+                const vendors = [...new Set(appData.expenses.filter(x => x.siteId === siteId && x.vendor).map(x => x.vendor))];
+                expVendorFilter.innerHTML = '<option value="">All Vendors</option>' + vendors.map(v => `<option value="${v}">${v}</option>`).join('');
+                expVendorFilter.value = expVendorVal;
+            }
+
+            const ptxCompanyFilter = document.getElementById('filter_ptx_company');
+            if (ptxCompanyFilter) {
+                const ptxCompanyVal = ptxCompanyFilter.value;
+                const ptxCompanies = [...new Set((appData.personalTx||[]).filter(x => x.siteId === siteId && x.company).map(x => x.company))];
+                ptxCompanyFilter.innerHTML = '<option value="">All Companies</option>' + ptxCompanies.map(c => `<option value="${c}">${c}</option>`).join('');
+                ptxCompanyFilter.value = ptxCompanyVal;
+            }
+
+            ['pt','exp','emd','bill','ptx'].forEach(prefix => { document.getElementById(prefix+'TableBody').innerHTML = ''; });
             document.getElementById('vendorBalBody').innerHTML = '';
             
             appData.partnerTx.filter(x => x.siteId === siteId).reverse().sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(x => {
@@ -1391,6 +1801,12 @@
                 </select>`;
                 document.getElementById('billTableBody').innerHTML += `<tr id="row-${x.id}"><td>${x.date}</td><td>${x.desc}</td><td class="currency">${formatCurrency(x.gross||0)}</td><td class="currency ${isRel ? 'positive' : 'highlight-orange'}">${formatCurrency(x.rm||0)}</td><td class="currency">${formatCurrency(x.net)}</td><td class="currency positive">${formatCurrency(x.alloc)}</td><td class="currency highlight-purple">${formatCurrency(retained)}</td><td>${statusSelect}</td><td style="text-align:right; width: 120px;"><button class="btn-action" onclick="showRecordHistory('${x.id}')" title="History"><i class="fa-solid fa-clock-rotate-left"></i></button><button class="btn-action btn-edit" onclick="editEntry('bills','${x.id}')"><i class="fa-solid fa-pen"></i></button><button class="btn-action" onclick="deleteEntry('bills','${x.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
             });
+            
+            appData.personalTx.filter(x => x.siteId === siteId).reverse().sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(x => {
+                const amountClass = x.type === 'Credit' ? 'positive' : 'negative';
+                document.getElementById('ptxTableBody').innerHTML += `<tr id="row-${x.id}"><td>${x.company}</td><td><span class="badge ${x.type === 'Credit' ? 'badge-success' : 'badge-danger'}">${x.type}</span></td><td>${x.desc}</td><td class="currency ${amountClass}">${formatCurrency(x.amount)}</td><td style="text-align:right; width: 120px;"><button class="btn-action" onclick="showRecordHistory('${x.id}')" title="History"><i class="fa-solid fa-clock-rotate-left"></i></button><button class="btn-action btn-edit" onclick="editEntry('personalTx','${x.id}')"><i class="fa-solid fa-pen"></i></button><button class="btn-action" onclick="deleteEntry('personalTx','${x.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
+            });
+            ['tablePt', 'tableExp', 'tableBal', 'tableEmd', 'tableBill', 'tablePtx'].forEach(id => filterTable(id));
         }
 
         function refreshCompanyDashboard() {
@@ -1408,6 +1824,7 @@
             appData.corpExpenses.filter(c => c.compId === compId).reverse().sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(c => {
                 cBody.innerHTML += `<tr id="row-${c.id}"><td>${c.date}</td><td>${c.desc}</td><td>${c.payType}</td><td class="currency negative">${formatCurrency(c.amount)}</td><td style="text-align: right; width: 120px;"><button class="btn-action" onclick="showRecordHistory('${c.id}')" title="History"><i class="fa-solid fa-clock-rotate-left"></i></button><button class="btn-action btn-edit" onclick="editEntry('corpExpenses', '${c.id}')"><i class="fa-solid fa-pen"></i></button><button class="btn-action" onclick="deleteEntry('corpExpenses', '${c.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
             });
+            filterTable('tableCorp');
         }
 
         function renderGlobalDashboard() {
@@ -1426,6 +1843,7 @@
             document.getElementById('globLocked').textContent = formatCurrency(gLocked);
             document.getElementById('globInv').textContent = formatCurrency(gInv);
             document.getElementById('globCorp').textContent = formatCurrency(gCorp);
+            filterTable('tableGlob');
             
             // Render Action Items
             const actionsList = document.getElementById('pendingActionsList');
@@ -1574,6 +1992,12 @@
             });
             content.innerHTML = html;
         }
+        document.addEventListener('keydown', function(e) {
+            if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                document.getElementById('globalSearchInput').focus();
+            }
+        });
 
         initApp();
     </script>
