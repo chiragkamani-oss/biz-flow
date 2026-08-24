@@ -217,6 +217,11 @@
         .audit-change-list li { margin-bottom: 4px; color: var(--text-primary); }
         .val-old { text-decoration: line-through; color: var(--danger); margin-right: 8px; }
         .val-new { color: var(--success); font-weight: bold; }
+        .tooltip-container { position: relative; display: inline-block; margin-left: 6px; }
+        .tooltip-icon { cursor: help; opacity: 0.6; font-size: 0.8em; transition: opacity 0.2s; }
+        .tooltip-container:hover .tooltip-icon { opacity: 1; }
+        .tooltip-content { position: absolute; bottom: 130%; left: 50%; transform: translateX(-50%); background: rgba(15, 20, 25, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); color: var(--text-primary); padding: 10px 14px; border-radius: 8px; font-size: 13px; font-weight: normal; font-family: 'Outfit', sans-serif; white-space: nowrap; pointer-events: none; opacity: 0; transition: all 0.2s; box-shadow: 0 8px 30px rgba(0,0,0,0.8); z-index: 10000; text-align: left; letter-spacing: 0.3px; }
+        .tooltip-container:hover .tooltip-content { opacity: 1; bottom: 140%; }
     </style>
 </head>
 <body>
@@ -271,26 +276,65 @@
             <div class="header"><h1>Global Overview</h1></div>
             <div class="dashboard-grid">
                 <div class="card glass">
-                    <div class="card-header"><span class="card-title">Corporate Reserves</span><i class="fa-solid fa-building-columns" style="color: var(--purple)"></i></div>
+                    <div class="card-header"><span class="card-title">Corporate Reserves <div class="tooltip-container"><i class="fa-solid fa-circle-info tooltip-icon"></i><div class="tooltip-content"><span style="color: var(--success)">Net Received</span> - <span style="color: var(--danger)">Net Allocated</span> - <span style="color: var(--warning)">Corp Expenses</span></div></div></span><i class="fa-solid fa-building-columns" style="color: var(--purple)"></i></div>
                     <div class="card-value currency highlight-purple" id="globCorp">₹0</div>
                     <div class="card-subtext">Retained by Parent Companies</div>
                 </div>
                 <div class="card glass">
-                    <div class="card-header"><span class="card-title">Total Cash Invested</span><i class="fa-solid fa-money-bill-wave" style="color: var(--success)"></i></div>
+                    <div class="card-header"><span class="card-title">Total Cash Invested <div class="tooltip-container"><i class="fa-solid fa-circle-info tooltip-icon"></i><div class="tooltip-content"><span style="color: var(--success)">Total Investments</span> - <span style="color: var(--danger)">Total Withdrawals</span></div></div></span><i class="fa-solid fa-money-bill-wave" style="color: var(--success)"></i></div>
                     <div class="card-value currency" id="globInv">₹0</div>
                     <div class="card-subtext">Overall Investments</div>
                 </div>
                 <div class="card glass">
-                    <div class="card-header"><span class="card-title">Locked Receivables</span><i class="fa-solid fa-lock" style="color: var(--orange)"></i></div>
+                    <div class="card-header"><span class="card-title">Locked Receivables <div class="tooltip-container"><i class="fa-solid fa-circle-info tooltip-icon"></i><div class="tooltip-content"><span style="color: var(--orange)">Unreleased RM</span> + <span style="color: var(--orange)">Pending EMDs</span></div></div></span><i class="fa-solid fa-lock" style="color: var(--orange)"></i></div>
                     <div class="card-value currency highlight-orange" id="globLocked">₹0</div>
                     <div class="card-subtext">Unreleased EMD & RM</div>
                 </div>
                 <div class="card glass">
-                    <div class="card-header"><span class="card-title">Total Available Site Cash</span><i class="fa-solid fa-wallet" style="color: var(--blue)"></i></div>
+                    <div class="card-header"><span class="card-title">Total Available Site Cash <div class="tooltip-container"><i class="fa-solid fa-circle-info tooltip-icon"></i><div class="tooltip-content"><span style="color: var(--success)">Total Cash In</span> - <span style="color: var(--danger)">Total Cash Out</span></div></div></span><i class="fa-solid fa-wallet" style="color: var(--blue)"></i></div>
                     <div class="card-value currency positive" id="globCash">₹0</div>
                     <div class="card-subtext">Across All Sites</div>
                 </div>
             </div>
+
+            <!-- Native Global Analytics -->
+            <div class="two-col" style="margin-bottom: 24px;">
+                <div class="card glass">
+                    <div class="card-header"><span class="card-title">Total Vendor Liabilities <div class="tooltip-container"><i class="fa-solid fa-circle-info tooltip-icon"></i><div class="tooltip-content"><span style="color: var(--warning)">Total Billed</span> - <span style="color: var(--success)">Total Paid</span></div></div></span><i class="fa-solid fa-file-invoice-dollar" style="color: var(--danger)"></i></div>
+                    <div class="card-value currency negative" id="globVendorLiability">₹0</div>
+                    <div style="margin-top: 15px;">
+                        <div class="flex-between" style="font-size: 14px; margin-bottom: 5px;">
+                            <span style="color: var(--text-secondary);">Total Billed</span>
+                            <span id="globVendorBilledStr" style="font-weight:bold; color: var(--danger);">₹0</span>
+                        </div>
+                        <div class="flex-between" style="font-size: 14px;">
+                            <span style="color: var(--text-secondary);">Total Paid</span>
+                            <span id="globVendorPaidStr" style="font-weight:bold; color: var(--success);">₹0</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card glass">
+                    <div class="card-header"><span class="card-title">Current Month Cash Flow (<span id="globMonthName"></span>) <div class="tooltip-container"><i class="fa-solid fa-circle-info tooltip-icon"></i><div class="tooltip-content"><span style="color: var(--success)">Cash In</span> <span style="color: var(--text-secondary)">(Bills + Invests + Personal Cr)</span><br><span style="color: var(--danger)">Cash Out</span> <span style="color: var(--text-secondary)">(Expenses + Withdraws + Personal Dr)</span></div></div></span><i class="fa-solid fa-money-bill-transfer" style="color: var(--blue)"></i></div>
+                    <div style="margin-top: 15px;">
+                        <div class="flex-between" style="font-size: 14px; margin-bottom: 5px;">
+                            <span style="color: var(--success);">In: <strong id="globCashInStr">₹0</strong></span>
+                            <span style="color: var(--danger);">Out: <strong id="globCashOutStr">₹0</strong></span>
+                        </div>
+                        <div style="height: 12px; border-radius: 6px; background: var(--surface-color); display: flex; overflow: hidden;">
+                            <div id="globCashInBar" style="height: 100%; background: var(--success); width: 0%;"></div>
+                            <div id="globCashOutBar" style="height: 100%; background: var(--danger); width: 0%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card glass" style="margin-bottom: 24px;">
+                <div class="card-header"><span class="card-title">Partner Equity Balances <div class="tooltip-container"><i class="fa-solid fa-circle-info tooltip-icon"></i><div class="tooltip-content"><span style="color: var(--success)">Total Investments</span> - <span style="color: var(--danger)">Total Withdrawals</span></div></div></span><i class="fa-solid fa-users" style="color: var(--accent-primary)"></i></div>
+                <div id="globPartnerEquityList" style="display: flex; flex-direction: column; gap: 15px; margin-top: 15px;">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
             <div class="card glass" style="margin-bottom: 24px; border-left: 4px solid var(--warning);">
                 <div class="card-header"><span class="card-title">Action Items & Reminders</span><i class="fa-solid fa-bell" style="color: var(--warning)"></i></div>
                 <div id="pendingActionsList" style="display: flex; flex-direction: column; gap: 10px; max-height: 250px; overflow-y: auto;">
@@ -445,9 +489,69 @@
 
             <div id="siteContentWrapper" style="display: none;">
                 <div class="dashboard-grid" style="grid-template-columns: repeat(3, 1fr);">
-                    <div class="card glass" style="border-left: 4px solid var(--success);"><div class="card-header"><span class="card-title">Available Cash</span></div><div class="card-value currency positive" id="siteCash">₹0</div></div>
-                    <div class="card glass" style="border-left: 4px solid var(--orange);"><div class="card-header"><span class="card-title">Locked Receivables (EMD + RM)</span></div><div class="card-value currency highlight-orange" id="siteLocked">₹0</div></div>
-                    <div class="card glass" style="border-left: 4px solid var(--purple);"><div class="card-header"><span class="card-title">Personal Tx Net</span></div><div class="card-value currency highlight-purple" id="sitePtxNet">₹0</div></div>
+                    <div class="card glass" style="border-left: 4px solid var(--success);"><div class="card-header"><span class="card-title">Available Cash <div class="tooltip-container"><i class="fa-solid fa-circle-info tooltip-icon"></i><div class="tooltip-content"><span style="color: var(--success)">Cash In</span> - <span style="color: var(--danger)">Cash Out</span></div></div></span></div><div class="card-value currency positive" id="siteCash">₹0</div></div>
+                    <div class="card glass" style="border-left: 4px solid var(--orange);"><div class="card-header"><span class="card-title">Locked Receivables (EMD + RM) <div class="tooltip-container"><i class="fa-solid fa-circle-info tooltip-icon"></i><div class="tooltip-content"><span style="color: var(--orange)">Unreleased RM</span> + <span style="color: var(--orange)">Pending EMDs</span></div></div></span></div><div class="card-value currency highlight-orange" id="siteLocked">₹0</div></div>
+                    <div class="card glass" style="border-left: 4px solid var(--purple);">
+                        <div class="card-header"><span class="card-title">Personal Tx Net <div class="tooltip-container"><i class="fa-solid fa-circle-info tooltip-icon"></i><div class="tooltip-content"><span style="color: var(--success)">Total Credits</span> - <span style="color: var(--danger)">Total Debits</span></div></div></span></div>
+                        <div class="card-value currency highlight-purple" id="sitePtxNet">₹0</div>
+                        <div style="margin-top: 15px;">
+                            <div class="flex-between" style="font-size: 14px; margin-bottom: 5px;">
+                                <span style="color: var(--success);">Total Credits</span>
+                                <span id="sitePtxCreditStr" style="font-weight:bold;">₹0</span>
+                            </div>
+                            <div class="flex-between" style="font-size: 14px;">
+                                <span style="color: var(--danger);">Total Debits</span>
+                                <span id="sitePtxDebitStr" style="font-weight:bold;">₹0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Native Site Analytics -->
+                <div class="two-col" style="margin-bottom: 24px;">
+                    <div class="card glass">
+                        <div class="card-header"><span class="card-title">Site Profitability <div class="tooltip-container"><i class="fa-solid fa-circle-info tooltip-icon"></i><div class="tooltip-content"><span style="color: var(--success)">Total RA Bills (Gross)</span> - <span style="color: var(--danger)">Total Site Expenses (Billed)</span></div></div></span><i class="fa-solid fa-chart-line" style="color: var(--accent-primary)"></i></div>
+                        <div class="card-value currency" id="siteProfitValue">₹0</div>
+                        <div style="margin-top: 15px;">
+                            <div class="flex-between" style="font-size: 14px; margin-bottom: 5px;">
+                                <span style="color: var(--success);">Total RA Bills</span>
+                                <span id="siteTotalBilledStr" style="font-weight:bold;">₹0</span>
+                            </div>
+                            <div class="flex-between" style="font-size: 14px; margin-bottom: 15px;">
+                                <span style="color: var(--danger);">Total Expenses</span>
+                                <span id="siteTotalExpStr" style="font-weight:bold;">₹0</span>
+                            </div>
+                            <div class="flex-between" style="font-size: 12px; margin-bottom: 5px; color: var(--text-secondary);">
+                                <span>Profit Margin</span>
+                                <span id="siteProfitMarginBadge" class="badge" style="background: var(--surface-color);">0%</span>
+                            </div>
+                            <div style="height: 8px; border-radius: 4px; background: var(--surface-color); overflow: hidden;">
+                                <div id="siteProfitMarginBar" style="height: 100%; width: 0%; background: var(--success);"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card glass">
+                        <div class="card-header"><span class="card-title">Top Creditors <div class="tooltip-container"><i class="fa-solid fa-circle-info tooltip-icon"></i><div class="tooltip-content">Vendors where <span style="color: var(--warning)">Billed</span> > <span style="color: var(--success)">Paid</span></div></div></span><i class="fa-solid fa-triangle-exclamation" style="color: var(--warning)"></i></div>
+                        
+                        <div style="margin-top: 5px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px;">
+                            <div class="flex-between" style="font-size: 14px; margin-bottom: 5px;">
+                                <span style="color: var(--text-secondary);">Total Billed</span>
+                                <span id="siteTopCreditorsBilled" style="font-weight:bold; color: var(--danger);">₹0</span>
+                            </div>
+                            <div class="flex-between" style="font-size: 14px; margin-bottom: 5px;">
+                                <span style="color: var(--text-secondary);">Total Paid</span>
+                                <span id="siteTopCreditorsPaid" style="font-weight:bold; color: var(--success);">₹0</span>
+                            </div>
+                            <div class="flex-between" style="font-size: 14px;">
+                                <span style="color: var(--text-secondary);">Net Liability</span>
+                                <span id="siteTopCreditorsOwe" style="font-weight:bold; color: var(--warning);">₹0</span>
+                            </div>
+                        </div>
+
+                        <div id="siteTopCreditorsList" style="display: flex; flex-direction: column; gap: 10px;">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
                 </div>
 
                 <div class="card glass">
@@ -487,6 +591,7 @@
                                     </div>
                                     <button class="btn btn-export" onclick="exportTableToExcel('tablePt', 'Partner_Transactions', 'partnerTx')"><i class="fa-solid fa-file-excel"></i> Export</button>
                                 </div>
+                                <div id="summaryPt" style="display:none; background: rgba(255,255,255,0.03); padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid var(--accent-primary); border: 1px solid rgba(255,255,255,0.1);"></div>
                                 <div class="table-container"><table id="tablePt"><thead><tr><th>Date</th><th>Partner</th><th>Desc</th><th>Type</th><th>Pay Type</th><th>Amount</th><th>Action</th></tr></thead><tbody id="ptTableBody"></tbody></table></div>
                             </div>
                         </div>
@@ -532,6 +637,7 @@
                                     </div>
                                     <button class="btn btn-export" onclick="exportTableToExcel('tableBal', 'Vendor_Balances')"><i class="fa-solid fa-file-excel"></i> Export</button>
                                 </div>
+                                <div id="summaryBal" style="display:none; background: rgba(255,255,255,0.03); padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid var(--accent-primary); border: 1px solid rgba(255,255,255,0.1);"></div>
                                 <div class="table-container" style="max-height: 200px;">
                                     <table id="tableBal">
                                         <thead><tr><th>Vendor Name</th><th>Total Billed</th><th>Total Paid Out</th><th>Current Owe Status</th></tr></thead>
@@ -565,6 +671,7 @@
                                     </div>
                                     <button class="btn btn-export" onclick="exportTableToExcel('tableEmd', 'EMD_Records', 'emd')"><i class="fa-solid fa-file-excel"></i> Export</button>
                                 </div>
+                                <div id="summaryEmd" style="display:none; background: rgba(255,255,255,0.03); padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid var(--accent-primary); border: 1px solid rgba(255,255,255,0.1);"></div>
                                 <div class="table-container"><table id="tableEmd"><thead><tr><th>Date</th><th>Ref</th><th>Pay Type</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead><tbody id="emdTableBody"></tbody></table></div>
                             </div>
                         </div>
@@ -597,6 +704,7 @@
                                     </div>
                                     <button class="btn btn-export" onclick="exportTableToExcel('tableBill', 'RA_Bills', 'bills')"><i class="fa-solid fa-file-excel"></i> Export</button>
                                 </div>
+                                <div id="summaryBill" style="display:none; background: rgba(255,255,255,0.03); padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid var(--accent-primary); border: 1px solid rgba(255,255,255,0.1);"></div>
                                 <div class="table-container"><table id="tableBill"><thead><tr><th>Date</th><th>Ref</th><th>Gross</th><th>RM (Ret)</th><th>Net Rcvd</th><th>Alloc to Site</th><th>Corp Retained</th><th>RM Status</th><th>Action</th></tr></thead><tbody id="billTableBody"></tbody></table></div>
                             </div>
                         </div>
@@ -628,6 +736,7 @@
                                     </div>
                                     <button class="btn btn-export" onclick="exportTableToExcel('tablePtx', 'Personal_Transactions', 'personalTx')"><i class="fa-solid fa-file-excel"></i> Export</button>
                                 </div>
+                                <div id="summaryPtx" style="display:none; background: rgba(255,255,255,0.03); padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid var(--accent-primary); border: 1px solid rgba(255,255,255,0.1);"></div>
                                 <div class="table-container"><table id="tablePtx"><thead><tr><th>Company</th><th>Type</th><th>Description</th><th>Amount</th><th>Action</th></tr></thead><tbody id="ptxTableBody"></tbody></table></div>
                             </div>
                         </div>
@@ -805,7 +914,7 @@
             if(col === 'company') { document.getElementById('companyName').value = obj.name; }
             if(col === 'site') { document.getElementById('siteCompanyId').value = obj.companyId; document.getElementById('siteName').value = obj.location; document.getElementById('managerName').value = obj.manager; }
             if(col === 'partnerTx') { document.getElementById('ptDate').value = obj.date; document.querySelector(`input[name="ptPayType"][value="${obj.payType}"]`).checked = true; document.getElementById('ptName').value = obj.name; document.getElementById('ptDesc').value = obj.desc || ''; document.querySelector(`input[name="ptType"][value="${obj.type}"]`).checked = true; document.getElementById('ptAmount').value = formatNum(obj.amount); }
-            if(col === 'expenses') { document.getElementById('expDate').value = obj.date; document.getElementById('expPayType').value = obj.payType; document.getElementById('expVendor').value = obj.vendor || ''; document.getElementById('expTxType').value = obj.txType || 'bill'; document.getElementById('expDesc').value = obj.desc; document.getElementById('expAmount').value = formatNum(obj.amount); }
+            if(col === 'expenses') { document.getElementById('expDate').value = obj.date; document.getElementById('expPayType').value = obj.payType; document.getElementById('expVendor').value = obj.vendor || ''; document.getElementById('expTxType').value = obj.txType || 'bill'; document.getElementById('expDesc').value = obj.desc; document.getElementById('expAmount').value = formatNum(obj.amount); document.getElementById('expTds').value = formatNum(obj.tds || 0); }
             if(col === 'emd') { document.getElementById('emdDate').value = obj.date; document.getElementById('emdPayType').value = obj.payType; document.getElementById('emdDesc').value = obj.desc; document.getElementById('emdAmount').value = formatNum(obj.amount); document.getElementById('emdReleaseDate').value = obj.releaseDate || ''; }
             if(col === 'bills') { document.getElementById('billDate').value = obj.date; document.getElementById('billPayType').value = obj.payType; document.getElementById('billDesc').value = obj.desc; document.getElementById('billGross').value = formatNum(obj.gross); document.getElementById('billRM').value = formatNum(obj.rm); document.getElementById('billTds').value = formatNum(obj.tds || 0); document.getElementById('billAdvRec').value = formatNum(obj.advRec || 0); document.getElementById('billDed').value = formatNum(obj.ded); document.getElementById('billAlloc').value = formatNum(obj.alloc); document.getElementById('billRmRelease').value = obj.rmReleaseDate || ''; }
             if(col === 'personalTx') { document.querySelector(`input[name="ptxType"][value="${obj.type}"]`).checked = true; document.getElementById('ptxCompany').value = obj.company; document.getElementById('ptxDesc').value = obj.desc; document.getElementById('ptxAmount').value = formatNum(obj.amount); }
@@ -1692,17 +1801,17 @@
             
             appData.bills.filter(x => x.siteId === siteId).forEach(x => { billAllocatedToSite += x.alloc; if(!isReleased(x.rmReleaseDate)) { billRMLocked += x.rm; } });
             
-            let ptxNet = 0;
+            let ptxNet = 0, ptxCredit = 0, ptxDebit = 0;
             if(appData.personalTx) {
                 appData.personalTx.filter(x => x.siteId === siteId).forEach(x => {
-                    if (x.type === 'Credit') ptxNet += x.amount;
-                    else if (x.type === 'Debit') ptxNet -= x.amount;
+                    if (x.type === 'Credit') { ptxNet += x.amount; ptxCredit += x.amount; }
+                    else if (x.type === 'Debit') { ptxNet -= x.amount; ptxDebit += x.amount; }
                 });
             }
 
             const totalLocked = emdLocked + billRMLocked;
             const availableCash = netInv - cashOut + cashIn - emdLocked + billAllocatedToSite + ptxNet;
-            return { netInv, exp, totalLocked, billAllocatedToSite, availableCash, vendorBalances: vBal, ptxNet };
+            return { netInv, exp, totalLocked, billAllocatedToSite, availableCash, vendorBalances: vBal, ptxNet, ptxCredit, ptxDebit };
         }
 
         function calculateCompanyStats(compId) {
@@ -1725,6 +1834,8 @@
             document.getElementById('sitePtxNet').textContent = formatCurrency(stats.ptxNet);
             if (stats.ptxNet < 0) { document.getElementById('sitePtxNet').classList.add('negative'); document.getElementById('sitePtxNet').classList.remove('positive'); document.getElementById('sitePtxNet').classList.remove('highlight-purple'); }
             else { document.getElementById('sitePtxNet').classList.add('positive'); document.getElementById('sitePtxNet').classList.remove('negative'); document.getElementById('sitePtxNet').classList.remove('highlight-purple'); }
+            document.getElementById('sitePtxCreditStr').textContent = formatCurrency(stats.ptxCredit);
+            document.getElementById('sitePtxDebitStr').textContent = formatCurrency(stats.ptxDebit);
 
             const ptPartnerFilter = document.getElementById('filter_pt_partner');
             if (ptPartnerFilter) {
@@ -1753,13 +1864,20 @@
             ['pt','exp','emd','bill','ptx'].forEach(prefix => { document.getElementById(prefix+'TableBody').innerHTML = ''; });
             document.getElementById('vendorBalBody').innerHTML = '';
             
+            let ptInvest = 0, ptWithdraw = 0;
             appData.partnerTx.filter(x => x.siteId === siteId).reverse().sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(x => {
+                if(x.type === 'invest') ptInvest += x.amount; else ptWithdraw += x.amount;
                 let typeSelect = `<select class="form-control" style="padding: 2px 5px; height: auto; min-width: 100px;" onchange="updateRecordStatus('partnerTx', '${x.id}', this.value)">
                     <option value="invest" ${x.type==='invest'?'selected':''}>Invest</option>
                     <option value="withdraw" ${x.type==='withdraw'?'selected':''}>Withdraw</option>
                 </select>`;
                 document.getElementById('ptTableBody').innerHTML += `<tr id="row-${x.id}"><td>${x.date}</td><td>${x.name}</td><td>${x.desc||''}</td><td>${typeSelect}</td><td>${x.payType}</td><td><span class="currency">${formatCurrency(x.amount)}</span></td><td style="text-align:right; width: 120px;"><button class="btn-action" onclick="showRecordHistory('${x.id}')" title="History"><i class="fa-solid fa-clock-rotate-left"></i></button><button class="btn-action btn-edit" onclick="editEntry('partnerTx','${x.id}')"><i class="fa-solid fa-pen"></i></button><button class="btn-action" onclick="deleteEntry('partnerTx','${x.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
             });
+            if(ptInvest > 0 || ptWithdraw > 0) {
+                document.getElementById('summaryPt').style.display = 'flex';
+                document.getElementById('summaryPt').style.justifyContent = 'space-around';
+                document.getElementById('summaryPt').innerHTML = `<div style="text-align:center;"><div style="color:var(--text-secondary); font-size:12px; margin-bottom:4px;">Total Invested</div><div style="color:var(--success); font-weight:bold; font-size:16px;" class="currency">${formatCurrency(ptInvest)}</div></div><div style="text-align:center;"><div style="color:var(--text-secondary); font-size:12px; margin-bottom:4px;">Total Withdrawn</div><div style="color:var(--danger); font-weight:bold; font-size:16px;" class="currency">${formatCurrency(ptWithdraw)}</div></div>`;
+            } else { document.getElementById('summaryPt').style.display = 'none'; }
             
             appData.expenses.filter(x => x.siteId === siteId).reverse().sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(x => {
                 let txTypeSelect = `<select class="form-control" style="padding: 2px 5px; height: auto; min-width: 110px;" onchange="updateRecordStatus('expenses', '${x.id}', this.value)">
@@ -1772,18 +1890,35 @@
                 let descStr = x.desc;
                 if(x.tds && parseFloat(x.tds) > 0) descStr += ` <span style="color:var(--danger);font-size:0.9em;">(-${formatCurrency(x.tds)} TDS)</span>`;
 
-                document.getElementById('expTableBody').innerHTML += `<tr id="row-${x.id}"><td>${x.date}</td><td>${x.vendor||'-'}</td><td>${txTypeSelect}</td><td>${descStr}</td><td><span class="currency">${formatCurrency(x.amount)}</span></td><td style="text-align:right; width: 120px;"><button class="btn-action" onclick="showRecordHistory('${x.id}')" title="History"><i class="fa-solid fa-clock-rotate-left"></i></button><button class="btn-action btn-edit" onclick="editEntry('expenses','${x.id}')"><i class="fa-solid fa-pen"></i></button><button class="btn-action" onclick="deleteEntry('expenses','${x.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
+                let amtHtml = `<span class="currency">${formatCurrency(x.amount)}</span>`;
+                if(x.txType === 'bill' && x.tds && parseFloat(x.tds) > 0) {
+                    amtHtml += `<br><span style="font-size: 11px; color: var(--text-secondary);">TDS: <span class="currency negative">${formatCurrency(x.tds)}</span></span>`;
+                }
+                document.getElementById('expTableBody').innerHTML += `<tr id="row-${x.id}"><td>${x.date}</td><td>${x.vendor||'-'}</td><td>${txTypeSelect}</td><td>${descStr}</td><td>${amtHtml}</td><td style="text-align:right; width: 120px;"><button class="btn-action" onclick="showRecordHistory('${x.id}')" title="History"><i class="fa-solid fa-clock-rotate-left"></i></button><button class="btn-action btn-edit" onclick="editEntry('expenses','${x.id}')"><i class="fa-solid fa-pen"></i></button><button class="btn-action" onclick="deleteEntry('expenses','${x.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
             });
 
             // Render Vendor Balances
+            let grandBilled = 0, grandPaid = 0;
             Object.keys(stats.vendorBalances).forEach(v => {
                 const b = stats.vendorBalances[v];
+                grandBilled += b.billed;
+                grandPaid += b.paid;
                 const owe = b.billed - b.paid;
                 const status = owe > 0 ? `<span class="badge badge-danger">Owe ${formatCurrency(owe)}</span>` : owe < 0 ? `<span class="badge badge-success">Advance ${formatCurrency(Math.abs(owe))}</span>` : `<span class="badge badge-blue">Settled</span>`;
                 document.getElementById('vendorBalBody').innerHTML += `<tr><td><strong>${v}</strong></td><td class="currency">${formatCurrency(b.billed)}</td><td class="currency">${formatCurrency(b.paid)}</td><td>${status}</td></tr>`;
             });
+            
+            if(Object.keys(stats.vendorBalances).length > 0) {
+                const grandOwe = grandBilled - grandPaid;
+                const grandStatus = grandOwe > 0 ? `<span class="badge badge-danger">Total Owe ${formatCurrency(grandOwe)}</span>` : grandOwe < 0 ? `<span class="badge badge-success">Total Advance ${formatCurrency(Math.abs(grandOwe))}</span>` : `<span class="badge badge-blue">All Settled</span>`;
+                document.getElementById('summaryBal').style.display = 'flex';
+                document.getElementById('summaryBal').style.justifyContent = 'space-around';
+                document.getElementById('summaryBal').innerHTML = `<div style="text-align:center;"><div style="color:var(--text-secondary); font-size:12px; margin-bottom:4px;">Total Billed</div><div style="color:var(--text-primary); font-weight:bold; font-size:16px;" class="currency">${formatCurrency(grandBilled)}</div></div><div style="text-align:center;"><div style="color:var(--text-secondary); font-size:12px; margin-bottom:4px;">Total Paid</div><div style="color:var(--success); font-weight:bold; font-size:16px;" class="currency">${formatCurrency(grandPaid)}</div></div><div style="text-align:center;"><div style="color:var(--text-secondary); font-size:12px; margin-bottom:4px;">Net Liability</div><div style="color:var(--warning); font-weight:bold; font-size:16px;">${grandStatus}</div></div>`;
+            } else { document.getElementById('summaryBal').style.display = 'none'; }
 
+            let emdTotal = 0;
             appData.emd.filter(x => x.siteId === siteId).reverse().sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(x => {
+                emdTotal += x.amount;
                 let statusSelect = `<select class="form-control" style="padding: 2px 5px; height: auto; min-width: 100px;" onchange="updateRecordStatus('emd', '${x.id}', this.value)">
                     <option value="Pending" ${x.status==='Pending'?'selected':''}>Pending</option>
                     <option value="Converted" ${x.status==='Converted'?'selected':''}>Converted</option>
@@ -1792,21 +1927,117 @@
                 </select>`;
                 document.getElementById('emdTableBody').innerHTML += `<tr id="row-${x.id}"><td>${x.date}</td><td>${x.desc}</td><td>${x.payType}</td><td><span class="currency">${formatCurrency(x.amount)}</span></td><td>${statusSelect}</td><td style="text-align:right; width: 120px;"><button class="btn-action" onclick="showRecordHistory('${x.id}')" title="History"><i class="fa-solid fa-clock-rotate-left"></i></button><button class="btn-action btn-edit" onclick="editEntry('emd','${x.id}')"><i class="fa-solid fa-pen"></i></button><button class="btn-action" onclick="deleteEntry('emd','${x.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
             });
+            if(emdTotal > 0) {
+                document.getElementById('summaryEmd').style.display = 'flex';
+                document.getElementById('summaryEmd').innerHTML = `<div style="text-align:center; width:100%;"><div style="color:var(--text-secondary); font-size:12px; margin-bottom:4px;">Total EMD Deposited</div><div style="color:var(--accent-primary); font-weight:bold; font-size:16px;" class="currency">${formatCurrency(emdTotal)}</div></div>`;
+            } else { document.getElementById('summaryEmd').style.display = 'none'; }
+            let billGross = 0, billRM = 0, billNet = 0, billAlloc = 0, billRet = 0;
             appData.bills.filter(x => x.siteId === siteId).reverse().sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(x => {
                 const isRel = isReleased(x.rmReleaseDate);
                 const retained = (x.net - x.alloc) + (isRel ? (x.rm || 0) : 0);
+                billGross += x.gross || 0; billRM += x.rm || 0; billNet += x.net || 0; billAlloc += x.alloc || 0; billRet += retained;
                 let statusSelect = `<select class="form-control" style="padding: 2px 5px; height: auto; min-width: 90px;" onchange="updateRecordStatus('bills', '${x.id}', this.value)">
                     <option value="" ${!isRel?'selected':''}>Locked</option>
                     <option value="Released" ${isRel?'selected':''}>Released</option>
                 </select>`;
                 document.getElementById('billTableBody').innerHTML += `<tr id="row-${x.id}"><td>${x.date}</td><td>${x.desc}</td><td class="currency">${formatCurrency(x.gross||0)}</td><td class="currency ${isRel ? 'positive' : 'highlight-orange'}">${formatCurrency(x.rm||0)}</td><td class="currency">${formatCurrency(x.net)}</td><td class="currency positive">${formatCurrency(x.alloc)}</td><td class="currency highlight-purple">${formatCurrency(retained)}</td><td>${statusSelect}</td><td style="text-align:right; width: 120px;"><button class="btn-action" onclick="showRecordHistory('${x.id}')" title="History"><i class="fa-solid fa-clock-rotate-left"></i></button><button class="btn-action btn-edit" onclick="editEntry('bills','${x.id}')"><i class="fa-solid fa-pen"></i></button><button class="btn-action" onclick="deleteEntry('bills','${x.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
             });
+            if(billGross > 0) {
+                document.getElementById('summaryBill').style.display = 'flex';
+                document.getElementById('summaryBill').style.justifyContent = 'space-around';
+                document.getElementById('summaryBill').innerHTML = `<div style="text-align:center;"><div style="color:var(--text-secondary); font-size:12px; margin-bottom:4px;">Total Gross</div><div style="color:var(--text-primary); font-weight:bold; font-size:16px;" class="currency">${formatCurrency(billGross)}</div></div><div style="text-align:center;"><div style="color:var(--text-secondary); font-size:12px; margin-bottom:4px;">Total RM</div><div style="color:var(--warning); font-weight:bold; font-size:16px;" class="currency">${formatCurrency(billRM)}</div></div><div style="text-align:center;"><div style="color:var(--text-secondary); font-size:12px; margin-bottom:4px;">Total Net Rcvd</div><div style="color:var(--success); font-weight:bold; font-size:16px;" class="currency">${formatCurrency(billNet)}</div></div><div style="text-align:center;"><div style="color:var(--text-secondary); font-size:12px; margin-bottom:4px;">Allocated to Site</div><div style="color:var(--accent-primary); font-weight:bold; font-size:16px;" class="currency">${formatCurrency(billAlloc)}</div></div><div style="text-align:center;"><div style="color:var(--text-secondary); font-size:12px; margin-bottom:4px;">Total Retained</div><div style="color:var(--highlight-purple); font-weight:bold; font-size:16px;" class="currency">${formatCurrency(billRet)}</div></div>`;
+            } else { document.getElementById('summaryBill').style.display = 'none'; }
             
+            let ptxCr = 0, ptxDr = 0;
             appData.personalTx.filter(x => x.siteId === siteId).reverse().sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(x => {
+                if(x.type === 'Credit') ptxCr += x.amount; else ptxDr += x.amount;
                 const amountClass = x.type === 'Credit' ? 'positive' : 'negative';
                 document.getElementById('ptxTableBody').innerHTML += `<tr id="row-${x.id}"><td>${x.company}</td><td><span class="badge ${x.type === 'Credit' ? 'badge-success' : 'badge-danger'}">${x.type}</span></td><td>${x.desc}</td><td class="currency ${amountClass}">${formatCurrency(x.amount)}</td><td style="text-align:right; width: 120px;"><button class="btn-action" onclick="showRecordHistory('${x.id}')" title="History"><i class="fa-solid fa-clock-rotate-left"></i></button><button class="btn-action btn-edit" onclick="editEntry('personalTx','${x.id}')"><i class="fa-solid fa-pen"></i></button><button class="btn-action" onclick="deleteEntry('personalTx','${x.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
             });
+            if(ptxCr > 0 || ptxDr > 0) {
+                document.getElementById('summaryPtx').style.display = 'flex';
+                document.getElementById('summaryPtx').style.justifyContent = 'space-around';
+                document.getElementById('summaryPtx').innerHTML = `<div style="text-align:center;"><div style="color:var(--text-secondary); font-size:12px; margin-bottom:4px;">Total Credit</div><div style="color:var(--success); font-weight:bold; font-size:16px;" class="currency">${formatCurrency(ptxCr)}</div></div><div style="text-align:center;"><div style="color:var(--text-secondary); font-size:12px; margin-bottom:4px;">Total Debit</div><div style="color:var(--danger); font-weight:bold; font-size:16px;" class="currency">${formatCurrency(ptxDr)}</div></div>`;
+            } else { document.getElementById('summaryPtx').style.display = 'none'; }
             ['tablePt', 'tableExp', 'tableBal', 'tableEmd', 'tableBill', 'tablePtx'].forEach(id => filterTable(id));
+            renderNativeSiteAnalytics(siteId);
+        }
+
+        function renderNativeSiteAnalytics(siteId) {
+            if (!siteId) return;
+            const stats = calculateSiteStats(siteId);
+
+            // 1. Site Profitability
+            let totalBilled = 0;
+            appData.bills.filter(b => b.siteId === siteId).forEach(b => { totalBilled += b.gross; });
+            
+            const profit = totalBilled - stats.exp;
+            document.getElementById('siteProfitValue').textContent = formatCurrency(profit);
+            document.getElementById('siteTotalBilledStr').textContent = formatCurrency(totalBilled);
+            document.getElementById('siteTotalExpStr').textContent = formatCurrency(stats.exp);
+            
+            const badge = document.getElementById('siteProfitMarginBadge');
+            const bar = document.getElementById('siteProfitMarginBar');
+            
+            if (profit > 0 && totalBilled > 0) {
+                const margin = (profit / totalBilled) * 100;
+                document.getElementById('siteProfitValue').className = 'card-value currency positive';
+                badge.textContent = margin.toFixed(1) + '%';
+                badge.className = 'badge badge-success';
+                bar.style.width = `${Math.min(100, margin)}%`;
+                bar.style.background = 'var(--success)';
+            } else if (profit < 0) {
+                const margin = totalBilled > 0 ? (Math.abs(profit) / totalBilled) * 100 : 100;
+                document.getElementById('siteProfitValue').className = 'card-value currency negative';
+                badge.textContent = '-' + margin.toFixed(1) + '%';
+                badge.className = 'badge badge-danger';
+                bar.style.width = `${Math.min(100, margin)}%`;
+                bar.style.background = 'var(--danger)';
+            } else {
+                document.getElementById('siteProfitValue').className = 'card-value currency';
+                badge.textContent = '0%';
+                badge.className = 'badge';
+                bar.style.width = '0%';
+                bar.style.background = 'var(--surface-color)';
+            }
+
+            // 2. Top Creditors List
+            const vList = document.getElementById('siteTopCreditorsList');
+            vList.innerHTML = '';
+            
+            const creditors = [];
+            let totalCBilled = 0, totalCPaid = 0;
+            Object.keys(stats.vendorBalances).forEach(v => {
+                const b = stats.vendorBalances[v];
+                totalCBilled += b.billed;
+                totalCPaid += b.paid;
+                const owe = b.billed - b.paid;
+                if (owe > 0) creditors.push({ vendor: v, owe: owe });
+            });
+            
+            document.getElementById('siteTopCreditorsBilled').textContent = formatCurrency(totalCBilled);
+            document.getElementById('siteTopCreditorsPaid').textContent = formatCurrency(totalCPaid);
+            document.getElementById('siteTopCreditorsOwe').textContent = formatCurrency(totalCBilled - totalCPaid);
+            
+            creditors.sort((a,b) => b.owe - a.owe).slice(0, 3).forEach(c => {
+                const maxOwe = creditors[0].owe;
+                const pct = (c.owe / maxOwe) * 100;
+                vList.innerHTML += `
+                    <div>
+                        <div class="flex-between" style="font-size: 14px; margin-bottom: 5px;">
+                            <span><strong>${c.vendor}</strong></span>
+                            <span class="currency negative">${formatCurrency(c.owe)}</span>
+                        </div>
+                        <div style="height: 6px; border-radius: 3px; background: var(--surface-color);">
+                            <div style="height: 100%; width: ${pct}%; background: var(--danger); border-radius: 3px;"></div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            if(creditors.length === 0) {
+                vList.innerHTML = '<div style="color: var(--text-secondary); font-style: italic;">No outstanding vendor bills on this site!</div>';
+            }
         }
 
         function refreshCompanyDashboard() {
@@ -1876,7 +2107,85 @@
                 actionsList.innerHTML = '<div style="color: var(--text-secondary); font-style: italic; padding: 10px;">No pending actions or reminders! All caught up.</div>';
             }
             
+            renderNativeGlobalAnalytics();
         }
+
+        function renderNativeGlobalAnalytics() {
+            // 1. Total Vendor Liabilities
+            let totalBilled = 0, totalPaid = 0;
+            appData.expenses.forEach(x => {
+                if(x.txType === 'bill') totalBilled += (x.amount - (x.tds ? parseFloat(x.tds) : 0));
+                else if(x.txType === 'pay_given' || x.txType === 'advance_given') totalPaid += x.amount;
+                else if(x.txType === 'pay_received') totalPaid -= x.amount;
+            });
+            const vendorLiab = totalBilled - totalPaid;
+            document.getElementById('globVendorLiability').textContent = formatCurrency(vendorLiab);
+            document.getElementById('globVendorBilledStr').textContent = formatCurrency(totalBilled);
+            document.getElementById('globVendorPaidStr').textContent = formatCurrency(totalPaid);
+
+            // 2. Current Month Cash Flow
+            const now = new Date();
+            const currMonth = now.toISOString().substring(0, 7); // YYYY-MM
+            const monthName = now.toLocaleString('default', { month: 'long' });
+            document.getElementById('globMonthName').textContent = monthName;
+
+            let cashIn = 0, cashOut = 0;
+            appData.bills.forEach(b => { if(b.date.startsWith(currMonth)) cashIn += b.net; });
+            appData.partnerTx.forEach(p => { 
+                if(p.date.startsWith(currMonth)) {
+                    if(p.type === 'invest') cashIn += p.amount; else cashOut += p.amount; 
+                }
+            });
+            appData.expenses.forEach(e => { if(e.date.startsWith(currMonth)) cashOut += e.amount; });
+            appData.corpExpenses.forEach(c => { if(c.date.startsWith(currMonth)) cashOut += c.amount; });
+            appData.emd.forEach(e => { if(e.date.startsWith(currMonth)) cashOut += e.amount; });
+            if(appData.personalTx) {
+                appData.personalTx.forEach(p => {
+                    if(p.date.startsWith(currMonth)) {
+                        if(p.type === 'Debit') cashOut += p.amount; else cashIn += p.amount;
+                    }
+                });
+            }
+
+            document.getElementById('globCashInStr').textContent = formatCurrency(cashIn);
+            document.getElementById('globCashOutStr').textContent = formatCurrency(cashOut);
+            
+            const totalFlow = cashIn + cashOut;
+            const inPct = totalFlow > 0 ? (cashIn / totalFlow) * 100 : 0;
+            const outPct = totalFlow > 0 ? (cashOut / totalFlow) * 100 : 0;
+            document.getElementById('globCashInBar').style.width = `${inPct}%`;
+            document.getElementById('globCashOutBar').style.width = `${outPct}%`;
+
+            // 3. Partner Equity Balances
+            const partnerEq = {};
+            let maxEq = 0;
+            appData.partnerTx.forEach(p => {
+                if(!partnerEq[p.name]) partnerEq[p.name] = 0;
+                if(p.type === 'invest') partnerEq[p.name] += p.amount;
+                else partnerEq[p.name] -= p.amount;
+            });
+            Object.values(partnerEq).forEach(v => { if(v > maxEq) maxEq = v; });
+            
+            const eqList = document.getElementById('globPartnerEquityList');
+            eqList.innerHTML = '';
+            
+            Object.entries(partnerEq).sort((a,b) => b[1] - a[1]).forEach(([name, eq]) => {
+                const pct = maxEq > 0 ? (eq / maxEq) * 100 : 0;
+                eqList.innerHTML += `
+                    <div>
+                        <div class="flex-between" style="font-size: 14px; margin-bottom: 5px;">
+                            <span><strong>${name}</strong></span>
+                            <span class="currency" style="color: var(--accent-primary);">${formatCurrency(eq)}</span>
+                        </div>
+                        <div style="height: 6px; border-radius: 3px; background: var(--surface-color);">
+                            <div style="height: 100%; width: ${Math.max(0, pct)}%; background: var(--accent-primary); border-radius: 3px;"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            if(Object.keys(partnerEq).length === 0) eqList.innerHTML = '<div style="color: var(--text-secondary); font-style: italic;">No partner investments found.</div>';
+        }
+
 
         function highlightRow(id) {
             setTimeout(() => {
