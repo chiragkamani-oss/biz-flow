@@ -1251,7 +1251,7 @@
         </div>
 
         <!-- Search Results View -->
-        <div id="searchResultsView" class="view active" style="display: flex; flex-direction: column;">
+        <div id="searchResultsView" class="view active">
             <div class="header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-shrink: 0;">
                 <h1 id="searchResultTitle">Insights & Reports</h1>
                 <!-- Hidden inputs for global search logic -->
@@ -2564,7 +2564,7 @@
                 return true;
             };
 
-            console.log('test);
+            console.log('test');
 
             const getSiteName = (sid) => {
                 const s = appData.sites.find(x => x.id === sid);
